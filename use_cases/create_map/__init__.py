@@ -1,0 +1,1 @@
+from .create_state_location_map_use_case import execute as gerar_mapa_destaque_geobr

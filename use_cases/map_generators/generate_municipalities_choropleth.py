@@ -1,96 +1,63 @@
 # use_cases/map_generators/generate_municipalities_choropleth.py
-
-"""
-Use case orchestrator for generating a choropleth map of a state's municipalities.
-
-This script is responsible for:
-1. Preparing geographic data (loading states and municipalities, clipping).
-2. Orchestrating the plotting of the base map and the choropleth layer
-   by calling the reusable components from the shared library.
-3. Applying a zoom to the state's bounds.
-4. Finalizing and saving the map artifact.
-"""
-
 import os
+import sys
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
-# Imports from our new, clean, and professional component library
-from shared.map_components import (
-    create_base_map,
-    plot_states_layer,
-    plot_choropleth_layer
-)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.append(project_root)
+
+from shared.map_components import create_base_map, plot_states_layer, plot_choropleth_layer
+from shared.map_components import map_styles
 
 def execute(uf: str, coluna: str, caminhos: dict) -> None:
-    """
-    Generates and saves a choropleth map for a state's municipalities.
-
-    Args:
-        uf (str): The abbreviation of the state (e.g., "SP").
-        coluna (str): The name of the data column to use for coloring.
-        caminhos (dict): A dictionary containing all necessary file paths.
-    """
-    print(f"\n--- Use Case: GENERATING MUNICIPALITY CHOROPLETH MAP FOR {uf} ---")
+    print(f"\n--- Caso de Uso: Gerando Mapa Coroplético de Municípios para {uf} ---")
     
     projecao: str = "epsg:3857"
-
-    # --- STAGE 1: DATA PREPARATION ---
-    print("  -> Preparing geographic data...")
-    
-    # Load states data once, it will be used for masking and zooming.
-    gdf_estados = gpd.read_file(caminhos['estados']).to_crs(projecao)
-    mascara_estado = gdf_estados[gdf_estados['abbreviation'] == uf.upper()].copy()
-    if mascara_estado.empty:
-        print(f"  -> ERROR: State '{uf}' not found. Aborting.")
-        return
-    mascara_estado['geometry'] = mascara_estado.geometry.buffer(0)
-
-    # Load and clip the municipalities data for the selected state.
-    print(f"  -> Loading and clipping municipalities for {uf}...")
+    print("  -> Preparando dados geográficos...")
     try:
+        gdf_estados = gpd.read_file(caminhos['estados']).to_crs(projecao)
+        mascara_estado = gdf_estados[gdf_estados['abbreviation'] == uf.upper()].copy()
+        if mascara_estado.empty:
+            print(f"  -> ERRO: Estado '{uf}' não encontrado."); return
+        mascara_estado['geometry'] = mascara_estado.geometry.buffer(0)
+
         gdf_municipios = gpd.read_file(caminhos['municipios']).to_crs(projecao)
         gdf_municipios['geometry'] = gdf_municipios.geometry.buffer(0)
         municipios_do_estado = gpd.clip(gdf_municipios, mascara_estado)
-        if municipios_do_estado.empty:
-            print("  -> WARNING: No municipalities found after clipping.")
-            return
     except Exception as e:
-        print(f"  -> ERROR: Failed to load or process municipality file. Error: {e}")
+        print(f"  -> ERRO: Falha ao carregar ou processar arquivos. Erro: {e}")
         return
 
-    # --- STAGE 2: MAP ORCHESTRATION ---
-    print("\n  -> Orchestrating map layer plotting...")
+    print("\n  -> Orquestrando a plotagem das camadas do mapa...")
     
-    # Stacking order plan
-    Z_BASE_ESTADOS = 2
-    Z_COROPLETH = 3
+    choropleth_style = map_styles.STYLES['municipality_choropleth']
+    general_style = map_styles.GENERAL_STYLE
 
-    # 2.1. Create the base map: ocean and South America
     fig, ax = create_base_map(caminhos['sulamerica'])
+    plot_states_layer(ax, gdf_estados, zorder=2)
     
-    # 2.2. Plot all Brazilian states with a neutral color as a background
-    plot_states_layer(ax, gdf_estados, zorder=Z_BASE_ESTADOS)
-    
-    # 2.3. Plot the rich choropleth layer on top
-    # The component handles data validation, coloring, and the legend internally.
-    plot_choropleth_layer(ax, municipios_do_estado, data_column=coluna, zorder=Z_COROPLETH)
+    plot_choropleth_layer(
+        ax, 
+        municipios_do_estado, 
+        data_column=coluna, 
+        cmap=choropleth_style['cmap'],
+        zorder=3
+    )
 
-    # --- STAGE 3: FINALIZATION & ZOOM ---
-    print("  -> Finalizing map (zoom, title, and saving)...")
-    
-    # 3.1. Apply zoom to the state's bounds
+    print("  -> Finalizando mapa...")
     minx, miny, maxx, maxy = mascara_estado.total_bounds
-    x_buffer = (maxx - minx) * 0.10
-    y_buffer = (maxy - miny) * 0.10
-    ax.set_xlim(minx - x_buffer, maxx + x_buffer)
-    ax.set_ylim(miny - y_buffer, maxy + y_buffer)
+    ax.set_xlim(minx - (maxx - minx) * 0.10, maxx + (maxx - minx) * 0.10)
+    ax.set_ylim(miny - (maxy - miny) * 0.10, maxy + (maxy - miny) * 0.10)
 
-    # 3.2. Set final touches and save
-    ax.set_title(f"Mapa Coroplético de '{coluna.capitalize()}' para {uf}", fontsize=16, color='black')
-    fig.patch.set_facecolor('white')
-    ax.set_facecolor('white')
+    ax.set_title(
+        f"Mapa Coroplético de '{coluna.capitalize()}' para {uf}", 
+        fontsize=general_style['title_fontsize'],
+        color=general_style['title_color_on_light_bg']
+    )
+    fig.patch.set_facecolor(general_style['figure_background_color'])
+    ax.set_facecolor(general_style['map_background_color'])
     
     plt.savefig(caminhos['saida'], dpi=300, bbox_inches='tight', pad_inches=0.05)
-    print(f"--- Task Complete! Map saved as '{os.path.basename(caminhos['saida'])}' ---")
+    print(f"--- Tarefa Concluída! Mapa salvo como '{os.path.basename(caminhos['saida'])}' ---")
     plt.close(fig)
