@@ -1,4 +1,3 @@
-# shared/map_components/map_styles.py
 """
 Módulo centralizado para as configurações de estilo dos mapas.
 
@@ -151,5 +150,32 @@ STYLES = {
             'fontweight': 'bold',
             'color': COLOR_PALETTE['black']
         }
-    }
+    },
+
+    # <<< NOVO ESTILO ADICIONADO AQUI >>>
+    # Estilo para o nosso novo mapa coroplético com fundo de contexto
+    # Usado em: use_cases/create_map/plotter.py
+    'advanced_choropleth': {
+        'figure': {
+            # Cor azul de fundo, vinda do seu estilo de destaque
+            'facecolor': '#a6c9e2' 
+        },
+        'context_layer': {  # Estilo para o mapa do Brasil no fundo
+            # Cor creme para o Brasil, vinda do seu estilo de destaque
+            'facecolor': '#f0e6c2',
+            # Borda branca, vinda do seu estilo de destaque
+            'edgecolor': COLOR_PALETTE['black'], 
+            'linewidth': 0.7,
+        },
+        'choropleth_layer': {  # Estilo para os municípios coloridos
+            'cmap': 'viridis', # Mantemos o gradiente de cores para os dados
+            'linewidth': 0.5,
+            'edgecolor': COLOR_PALETTE['black'], # Borda branca para consistência
+        },
+        'title': { # Estilo do título, idêntico ao do seu mapa de destaque
+            'fontsize': 16,
+            'fontweight': 'bold',
+            'color': COLOR_PALETTE['black']
+        }
+    },
 }

@@ -8,6 +8,7 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
 SHARED_DIR = os.path.join(PROJECT_ROOT, "shared")
+MAPS_OUTPUT_DIR = os.path.join(PROJECT_ROOT, "mapas_output")
 # Adiciona o diretório raiz ao path do Python para permitir importações diretas
 sys.path.insert(0, PROJECT_ROOT)
 
@@ -29,6 +30,8 @@ try:
     from discovery.inspectors import sinasc_inspector
     # Importamos os inspetores originais do seu projeto
     from discovery import inspectors as sidrapy_inspectors # Damos um apelido para não confundir
+    # --- Use Cases de Fetch (IBGE/Sidra) ---
+    from use_cases.fetch_sidrapy import fetch_ibge_population
 
     # --- Use Cases de Fetch e Geração ---
     from use_cases.fetch_pysus import (
@@ -51,6 +54,8 @@ try:
         gerar_mapa_regional_estado
     )
     from use_cases.map_generators.generate_clipped_regions_map import execute as gerar_mapa_regioes_recortadas
+    # --- Use Cases de Mapas (Novo Orquestrador) ---
+    from use_cases.create_map import orchestrator as advanced_map_orchestrator
     
 except ImportError as e:
     print(f"ERRO DE IMPORTAÇÃO: {e}\nVerifique se todas as pastas e arquivos '__init__.py' estão corretos.")
@@ -68,6 +73,33 @@ except ImportError:
 # SEÇÃO 3: CONTROLADORES DE TAREFAS
 # =============================================================================
 
+# <<< ADICIONE ESTA FUNÇÃO INTEIRA
+def run_fetch_population_controller():
+    print("\n--- Tarefa: Baixar Estimativa de População (IBGE/Sidra) ---")
+    state_abbr = input("  -> Digite a Sigla do Estado (ex: PE): ").upper()
+    if not (state_abbr and len(state_abbr) == 2):
+        print("❌ ERRO: Sigla de estado inválida."); return
+
+    year_str = input(f"  -> Digite o ano da estimativa (ex: 2022): ")
+    if not (year_str and year_str.isdigit() and len(year_str) == 4):
+        print("❌ ERRO: Ano inválido."); return
+    
+    # Chama o nosso novo fetcher do IBGE
+    fetch_ibge_population.execute(year=int(year_str), state_abbr=state_abbr, output_dir=OUTPUT_DIR)
+    print("--- Tarefa Concluída! ---")
+
+
+# <<< ADICIONE ESTA FUNÇÃO INTEIRA
+def run_advanced_map_controller():
+    if not MAPS_AVAILABLE:
+        print("Funcionalidade de mapas indisponível."); return
+    
+    # Chama o nosso novo orquestrador de mapas
+    advanced_map_orchestrator.execute(
+        pysus_output_dir=OUTPUT_DIR,
+        map_output_dir=MAPS_OUTPUT_DIR
+    )
+    print("--- Tarefa Concluída! ---")
 # --- Controladores de Fetch (GeoBR) ---
 def run_states():
     print("\n--- Tarefa: DADOS COMPLETOS POR ESTADO ---")
@@ -352,6 +384,8 @@ def display_menu():
     print("| 34. Baixar dados do SIM                                 |")
     print("| 35. Baixar dados do SINASC                              |")
     print("| 36. Baixar dados do SINAN                               |")
+    print("| 37. Baixar dados de População (IBGE)                    |")
+    print("+---------------------------------------------------------+")
     if MAPS_AVAILABLE:
         print("+---------------------------------------------------------+")
         print("| MAPAS                                                   |")
@@ -363,12 +397,14 @@ def display_menu():
         print("| 26. Gerar Mapa de Regiões Recortadas (Imed./Interm.)    |")
         print("| 27. Gerar Relatório Completo para um Estado             |") # Mantive esta opção, embora não esteja no seu loop.
         print("| 28. Gerar Mapa de Destaque (com GeoBR - Online)         |")
+        print("| 41. Gerar Mapa Coroplético Avançado (SINASC + IBGE)     |")
     print("+---------------------------------------------------------+")
     print("|  0. Sair do programa                                    |")
     print("+---------------------------------------------------------+")
 
 if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(MAPS_OUTPUT_DIR, exist_ok=True)
     
     # Mapeamento de escolhas para funções
     actions = {
@@ -380,14 +416,14 @@ if __name__ == "__main__":
         '12': run_list_geobr_controller, '13': run_list_pysus_controller, '14': run_list_sidrapy_controller,
         '16': run_inspect_sidrapy_controller, '17': run_inspect_pysus_controller, '18': run_list_states_controller,
         '31': run_fetch_cnes_controller, '32': run_fetch_sia_controller, '33': run_fetch_sih_controller,
-        '34': run_fetch_sim_controller, '35': run_fetch_sinasc_controller, '36': run_fetch_sinan_controller,
+        '34': run_fetch_sim_controller, '35': run_fetch_sinasc_controller, '36': run_fetch_sinan_controller, '37': run_fetch_population_controller,
     }
 
     if MAPS_AVAILABLE:
         map_actions = {
             '21': run_map_destaque_controller, '22': run_map_zoom_controller, '23': run_municipalities_choropleth_controller,
             '24': run_states_choropleth_controller, '25': run_state_regional_map_controller, '26': run_clipped_regions_map_controller,
-            '27': run_all_maps_for_state_controller, '28': run_map_destaque_geobr_controller,
+            '27': run_all_maps_for_state_controller, '28': run_map_destaque_geobr_controller,'41': run_advanced_map_controller,
         }
         actions.update(map_actions)
 
