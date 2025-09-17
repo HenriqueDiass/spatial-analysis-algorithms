@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 
 # =============================================================================
 # SEÇÃO 1: CONFIGURAÇÃO DE AMBIENTE E CAMINHOS
@@ -29,9 +30,11 @@ try:
     from discovery.inspectors import sinan_inspector
     from discovery.inspectors import sinasc_inspector
     # Importamos os inspetores originais do seu projeto
-    from discovery import inspectors as sidrapy_inspectors # Damos um apelido para não confundir
+    from discovery.inspectors import inspect_sidrapy_table
+    
     # --- Use Cases de Fetch (IBGE/Sidra) ---
     from use_cases.fetch_sidrapy import fetch_ibge_population
+    
 
     # --- Use Cases de Fetch e Geração ---
     from use_cases.fetch_pysus import (
@@ -224,10 +227,27 @@ def run_list_states_controller():
     listers.list_brazilian_states()
 
 def run_inspect_sidrapy_controller():
-    print("\n--- Ferramenta: Inspecionar Tabela do Sidrapy ---")
-    table_code = input("   -> Digite o código da tabela para inspecionar (ex: 6579): ")
-    if not table_code.isdigit(): print("   -> Código da tabela deve ser um número."); return
-    sidrapy_inspectors.inspect_sidrapy_table(table_code)
+    """
+    Controlador para inspecionar os metadados de uma tabela do SIDRA.
+    """
+    print("\n--- Ferramenta: Inspecionar Metadados de Tabela do Sidra ---")
+    table_code_str = input("   -> Digite o código da tabela para inspecionar (ex: 1612): ")
+    
+    if not table_code_str.isdigit():
+        print("   -> Código da tabela deve ser um número."); return
+
+    table_id = int(table_code_str)
+
+    # Chamada corrigida: passamos a variável OUTPUT_DIR
+    # que foi definida no topo do seu script.
+    metadata = inspect_sidrapy_table.execute(table_id=table_id, output_dir=OUTPUT_DIR)
+    
+    if metadata:
+        print("\n--- Conteúdo do JSON (retornado pelo caso de uso) ---")
+        print(json.dumps(metadata, ensure_ascii=False, indent=2))
+        print("--------------------------------------------------\n")
+    else:
+        print("A inspeção falhou. Verifique as mensagens de erro acima.")
 
 def run_inspect_pysus_controller():
     print("\n--- Ferramenta: Inspecionar Fonte do PySUS ---")

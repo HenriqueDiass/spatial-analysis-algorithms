@@ -1,36 +1,55 @@
-# use_cases/discovery/inspectors/inspect_sidrapy_table.py
-"""
-Use case to fetch and display actual data from a specific Sidra (IBGE) table.
-"""
-import sidrapy
-import pandas as pd
+import json
+import os
+from typing import Dict, Any, Optional
 
-def execute(table_code: str) -> None:
+# Importa a função do nosso módulo compartilhado que busca e processa os dados
+from shared.sidra_client import get_structured_description
+
+def execute(table_id: int, output_dir: str) -> Optional[Dict[str, Any]]:
+    """
+    Executa o caso de uso de inspeção de uma tabela do SIDRA.
+
+    Esta função busca os metadados da tabela, salva em um arquivo JSON
+    dentro do diretório especificado em 'output_dir' e retorna os dados estruturados.
+
+    Args:
+        table_id (int): O número da tabela do SIDRA a ser inspecionada.
+        output_dir (str): O caminho para o diretório onde o arquivo JSON será salvo.
+
+    Returns:
+        Um dicionário com os metadados da tabela, ou None se ocorrer um erro.
+    """
+    print(f"\n--- INICIANDO INSPEÇÃO DA TABELA {table_id} ---")
     
-    print(f"\n--- Buscando dados da tabela Sidra: {table_code} ---")
+    # 1. Usa o cliente para buscar os dados
+    data = get_structured_description(table_id)
 
-    # Configura o pandas para exibir melhor as tabelas no console
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.width', 1000)
+    # 2. Se os dados foram obtidos com sucesso, processa e salva
+    if data:
+        # Cria o nome base do arquivo
+        base_filename = f"tabela_{table_id}_estruturada.json"
+        
+        # Constrói o caminho completo usando o diretório fornecido como parâmetro
+        filename = os.path.join(output_dir, base_filename)
+        
+        print(f"Metadados obtidos com sucesso. Salvando em '{filename}'...")
+        
+        try:
+            # Garante que o diretório de saída exista antes de salvar
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Salva os dados no arquivo
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            print(f"✅ Arquivo '{filename}' salvo com sucesso.")
+        
+        except IOError as e:
+            print(f"❌ Erro ao salvar o arquivo '{filename}': {e}")
+            # Mesmo que não consiga salvar, ainda retornamos os dados
+    else:
+        print(f"⚠️ Não foi possível obter os metadados para a tabela {table_id}.")
 
-    try:
-        # Usamos sidrapy.get_table para buscar os dados reais da tabela.
-        # Por padrão, buscamos o último período para o Brasil para uma inspeção rápida.
-        data = sidrapy.get_table(
-            table_code=table_code,
-            territorial_level="1",      # Nível Territorial: 1 = Brasil
-            ibge_territorial_code="1",  # Código do Território: 1 = Brasil
-            variable="all",             # Todas as variáveis da tabela
-            period="last 1"             # Período: 'last 1' para o mais recente
-        )
-
-        if data is not None and not data.empty:
-            print("\n✅ Dados encontrados com sucesso!")
-            # Os dados reais começam na segunda linha (índice 1) do DataFrame retornado
-            print("A seguir, os dados mais recentes para o nível 'Brasil':")
-            print(data.iloc[1:])
-        else:
-            print(f"\n⚠️ Nenhum dado foi retornado para a tabela {table_code}. Verifique o código ou os parâmetros.")
-
-    except Exception as e:
-        print(f"ERRO: Falha ao buscar dados da tabela {table_code}. Detalhes: {e}")
+    print("--- FIM DA INSPEÇÃO ---")
+    
+    # 3. Retorna os dados para quem chamou a função (o run_use_case.py)
+    return data
