@@ -3,7 +3,7 @@ import sidrapy
 import os
 from typing import Optional, Dict
 
-# Dicionário para mapear a sigla do estado para o código IBGE (baseado no seu exemplo)
+# Dicionário para mapear a sigla do estado para o código IBGE
 STATE_ABBR_TO_IBGE_CODE: Dict[str, str] = {
     "RO": "11", "AC": "12", "AM": "13", "RR": "14", "PA": "15", "AP": "16", "TO": "17",
     "MA": "21", "PI": "22", "CE": "23", "RN": "24", "PB": "25", "PE": "26", "AL": "27",
@@ -14,13 +14,14 @@ STATE_ABBR_TO_IBGE_CODE: Dict[str, str] = {
 def execute(
     year: int, 
     state_abbr: str, 
-    output_dir: str,
-    table_code: str = "4709", 
-    variable_code: str = "93"
+    output_dir: str
 ) -> bool:
     """
     Busca dados de população do Sidra/IBGE para todos os municípios de um estado
     e salva o resultado em um arquivo JSON.
+    
+    Esta função seleciona automaticamente a tabela correta do IBGE
+    (Censo de 2022 ou Estimativas para outros anos).
     """
     print(f"\n▶️  Iniciando busca de população no IBGE/Sidra para {state_abbr.upper()} - {year}...")
     
@@ -31,22 +32,28 @@ def execute(
     
     ibge_state_code = STATE_ABBR_TO_IBGE_CODE[state_abbr]
 
+    if year == 2022:
+        table_to_use = "4709"
+        variable_to_use = "93"
+        print("   -> Ano do Censo (2022) detectado. Usando tabela 4709.")
+    else:
+        table_to_use = "6579"
+        variable_to_use = "9324"
+        print(f"   -> Ano de Estimativa ({year}) detectado. Usando tabela 6579.")
+
     try:
-        # --- LÓGICA APRIMORADA (baseada no seu código) para a consulta hierárquica ---
-        # territorial_level="6" -> Queremos os Municípios
-        # ibge_territorial_code=f"in n3 {ibge_state_code}" -> Que estão DENTRO (in) do Estado (n3) de código X
         codigo_territorial_formatado = f"in n3 {ibge_state_code}"
         
-        print(f"   -> Conectando à API... (Tabela: {table_code}, Variável: {variable_code})")
+        print(f"   -> Conectando à API... (Tabela: {table_to_use}, Variável: {variable_to_use})")
         raw_data = sidrapy.get_table(
-            table_code=table_code,
+            table_code=table_to_use,
             territorial_level="6",
             ibge_territorial_code=codigo_territorial_formatado,
-            variable=variable_code,
+            variable=variable_to_use,
             period=str(year),
-            header="y" # Importante para obter os nomes corretos das colunas
+            header="y"
         )
-        print(f"   -> Dados brutos recebidos com sucesso.")
+        print("   -> Dados brutos recebidos com sucesso.")
         
     except Exception as e:
         print(f"❌ ERRO: Falha durante a busca de dados na API do Sidra. Detalhes: {e}")
@@ -56,29 +63,24 @@ def execute(
         print(f"⚠️  AVISO: Nenhum dado de população encontrado para {state_abbr} em {year}.")
         return False
         
-    # --- Processamento Padronizado para o nosso Projeto ---
     print("   -> Processando e limpando os dados...")
     
-    # Define as colunas do DataFrame usando a primeira linha (header="y")
     df = raw_data.copy()
     df.columns = df.iloc[0]
     df = df.drop(0).reset_index(drop=True)
 
-    # Renomeia as colunas de interesse para o nosso padrão
     df.rename(columns={
         'Município (Código)': 'code_muni_7digit',
         'Município': 'municipality_name',
         'Valor': 'population'
     }, inplace=True)
 
-    # Garante que as colunas essenciais existam
     required_cols = ['code_muni_7digit', 'municipality_name', 'population']
     if not all(col in df.columns for col in required_cols):
         print("❌ ERRO: Colunas esperadas não encontradas no retorno da API.")
         print(f"   -> Colunas disponíveis: {df.columns.tolist()}")
         return False
 
-    # Seleciona, converte tipos e cria o código de 6 dígitos
     final_df = df[required_cols].copy()
     final_df['code_muni_7digit'] = pd.to_numeric(final_df['code_muni_7digit'], errors='coerce')
     final_df['population'] = pd.to_numeric(final_df['population'], errors='coerce')
@@ -86,10 +88,11 @@ def execute(
     final_df = final_df.astype({'code_muni_7digit': int, 'population': int})
     final_df['code_muni_6digit'] = final_df['code_muni_7digit'] // 10
     
-    # Reordena para o formato final
     final_df = final_df[['code_muni_6digit', 'code_muni_7digit', 'municipality_name', 'population']]
     
     try:
+        # --- LINHA ALTERADA ---
+        # O nome do arquivo agora está fixo no padrão que você pediu.
         output_filename = f"ibge_population_{state_abbr}_{year}_censo.json"
         output_path = os.path.join(output_dir, output_filename)
         
