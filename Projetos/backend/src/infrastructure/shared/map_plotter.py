@@ -1,0 +1,132 @@
+import io
+from typing import Optional
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches 
+import geobr 
+
+# IMPORTAÇÃO ESSENCIAL: Agora estamos buscando o estilo do seu módulo compartilhado
+# Assumindo que este código está em um lugar onde 'shared.map_components' é acessível
+from src.infrastructure.shared.map_styles import STYLES 
+
+def plot_map(
+    gdf: gpd.GeoDataFrame, 
+    state_abbr: str, 
+    column_to_plot: str, 
+    title: str, 
+    legend_label: str
+) -> Optional[io.BytesIO]: 
+    """
+    Recebe um GeoDataFrame e gera a imagem de um mapa coroplético avançado,
+    utilizando o estilo 'advanced_choropleth' do módulo shared.map_components.
+    """
+    print(f"\n--- [Visualização] Iniciando desenho do mapa: '{title}' ---")
+    
+    # Adicionando um fallback para o caso de a importação de cores falhar
+    style = STYLES.get('advanced_choropleth')
+    if not style:
+         print("❌ ERRO: O estilo 'advanced_choropleth' não foi encontrado no módulo STYLES.")
+         return None
+
+    try:
+        # --- CARREGAMENTO E CONFIGURAÇÃO INICIAL ---
+        print(" -> [Visualização] Buscando mapa do Brasil para usar como fundo...")
+        brasil_gdf = geobr.read_state(code_state='all', year=2020) 
+        
+        # Usamos o figsize quadrado padrão para todos os estados
+        # O plotter oficial usava (12, 12)
+        fig, ax = plt.subplots(1, 1, figsize=(12, 12)) 
+        ax.set_aspect('equal')
+        
+        # --- LÓGICA: FUNDO DO OCEANO (ZORDER=0) ---
+        # Cor do oceano: #a2d9f7 (fixa no seu plotter original)
+        ocean_patch = patches.Rectangle(
+            (-180, -90), 360, 180,
+            linewidth=0, edgecolor='none', facecolor='#a2d9f7', zorder=0
+        )
+        ax.add_patch(ocean_patch)
+
+        # --- LÓGICA: CAMADA DE CONTEXTO (BRASIL) (ZORDER=1) ---
+        print(" -> [Visualização] Desenhando camada de fundo (zorder=1)...")
+        brasil_gdf.plot(
+            ax=ax,
+            # Usando as cores do 'context_layer' do seu STYLES
+            color=style['context_layer']['facecolor'],
+            edgecolor=style['context_layer']['edgecolor'],
+            linewidth=style['context_layer']['linewidth'],
+            zorder=1
+        )
+        
+        # --- CONFIGURAÇÃO DA BARRA DE CORES (LEGENDA) ---
+        # Posição e tamanho da legenda (do plotter oficial)
+        cax = ax.inset_axes([0.02, 0.05, 0.2, 0.01]) 
+
+        # --- LÓGICA: CÁLCULO DE VMAX E PLOTAGEM (ZORDER=2) ---
+        print(f" -> [Visualização] Desenhando mapa coroplético de {state_abbr} (zorder=2)...")
+        gdf[column_to_plot] = gdf[column_to_plot].fillna(0)
+        vmax = gdf[column_to_plot].quantile(0.95)
+        if vmax == 0: vmax = 10
+
+        gdf.plot(
+            ax=ax, 
+            column=column_to_plot, 
+            # Usando as cores do 'choropleth_layer' do seu STYLES
+            cmap=style['choropleth_layer']['cmap'],
+            linewidth=style['choropleth_layer']['linewidth'],
+            edgecolor=style['choropleth_layer']['edgecolor'],
+            legend=True, 
+            vmin=0, 
+            vmax=vmax,
+            zorder=2,
+            # Usando 'label': "" como no plotter oficial
+            legend_kwds={'cax': cax, 'label': "", 'orientation': "horizontal"}
+        )
+
+        label_color = STYLES.get('legend', {}).get('labelcolor', STYLES['advanced_choropleth']['title']['color'])
+        
+        cax.spines[:].set_visible(False)
+        cax.tick_params(axis='x', bottom=False, labelbottom=True)
+        cax.xaxis.label.set_color(label_color)
+        cax.tick_params(axis='x', colors=label_color)
+
+        # --- LÓGICA: AJUSTE DE ZOOM DINÂMICO (COM CORTE PARA PE) ---
+        print(" -> [Visualização] Ajustando zoom e finalizando o mapa...")
+        
+        state_boundary = brasil_gdf[brasil_gdf['abbrev_state'] == state_abbr.upper()]
+        
+        if not state_boundary.empty:
+            minx, miny, maxx, maxy = state_boundary.total_bounds
+            
+            # Corte especial para Pernambuco para esconder Fernando de Noronha
+            if state_abbr.upper() == 'PE':
+                print(" -> [Visualização] PE detectado. Cortando a longitude para focar no continente.")
+                maxx = -34.5 # Valor do plotter oficial
+
+            # Buffer de 20% do plotter oficial
+            buffer_x = (maxx - minx) * 0.20 
+            buffer_y = (maxy - miny) * 0.20
+            ax.set_xlim(minx - buffer_x, maxx + buffer_x)
+            ax.set_ylim(miny - buffer_y, maxy + buffer_y)
+
+        ax.set_axis_off()
+        
+        # --- SALVAR EM MEMÓRIA ---
+        print(f" -> [Visualização] Salvando mapa em buffer de memória...")
+        buf = io.BytesIO()
+        plt.savefig(
+            buf, 
+            format='png', 
+            dpi=300, 
+            bbox_inches='tight',
+            pad_inches=0 # Usando o pad_inches do plotter oficial
+        )
+        buf.seek(0)
+        
+        plt.close(fig)
+        print(f"--- [Visualização] ✅ Mapa gerado com sucesso! ---")
+        return buf
+
+    except Exception as e:
+        print(f"❌ ERRO ao gerar a imagem do mapa: {e}")
+        if fig is not None: plt.close(fig)
+        return None

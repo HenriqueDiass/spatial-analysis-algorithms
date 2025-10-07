@@ -52,46 +52,47 @@ def save_data_to_json(
     dataframe: pd.DataFrame,
     system_name: str,
     output_filename: str,
-    metadata: Dict[str, Any]
+    metadata: Dict[str, Any],
+    summary_only: bool = False  # <-- NOVO PARÂMETRO! O padrão é False para não quebrar nada.
 ) -> None:
     """
-    Cria e salva um arquivo JSON completo com os dados e metadados,
-    e exibe uma amostra no console.
+    Cria e salva um arquivo JSON.
+    Se summary_only for True, salva apenas metadados.
+    Caso contrário, salva o dataset completo.
     """
-    print("\n📝 Gerando a saída JSON com todos os registros...")
+    print(f"\n📝 Gerando a saída JSON para o sistema {system_name}...")
 
-    # Garante que todos os dados no DF sejam strings para evitar erros de serialização JSON
-    dataframe_str = dataframe.astype(str)
+    output_json = {} # Dicionário que será salvo no final
 
-    # Objeto JSON final com todos os registros
-    full_json_output = {
-        "informationSystem": system_name,
-        **metadata,  # Adiciona metadados específicos do sistema
-        "totalRecords": len(dataframe),
-        "columns": list(dataframe.columns),
-        "data": dataframe_str.to_dict(orient="records")
-    }
+    # Lógica para decidir o que colocar no JSON
+    if summary_only:
+        # MODO RESUMO: Gera o JSON limpo, apenas com metadados.
+        print("   -> Modo: Resumo (sem dados individuais).")
+        output_json = {
+            "informationSystem": system_name,
+            **metadata
+        }
+    else:
+        # MODO COMPLETO (comportamento antigo)
+        print(f"   -> Modo: Completo ({len(dataframe)} registros).")
+        dataframe_str = dataframe.astype(str)
+        output_json = {
+            "informationSystem": system_name,
+            **metadata,
+            "totalRecords": len(dataframe),
+            "columns": list(dataframe.columns),
+            "data": dataframe_str.to_dict(orient="records")
+        }
 
-    # Objeto de amostra para exibição no console
-    preview_json = {
-        "informationSystem": system_name,
-        **metadata,
-        "totalRecords": full_json_output["totalRecords"],
-        "sampleData": full_json_output["data"][:5] # Apenas os 5 primeiros para preview
-    }
-    
-    # Adiciona dados sumarizados ao preview se existirem
-    if "casesPerMunicipality" in full_json_output:
-        preview_json["casesPerMunicipality_sample"] = full_json_output["casesPerMunicipality"][:5]
+    # A pré-visualização e o salvamento agora usam a variável 'output_json'
+    print("\n📄 Pré-visualização do JSON gerado:")
+    # Para a pré-visualização, mostramos o objeto inteiro, pois já é um resumo
+    print(json.dumps(output_json, indent=2, ensure_ascii=False))
 
-
-    print("\n📄 Pré-visualização do JSON (metadados e 5 primeiros registros):")
-    print(json.dumps(preview_json, indent=2, ensure_ascii=False))
-
-    print(f"\n💾 Salvando o dataset completo em: {output_filename}...")
+    print(f"\n💾 Salvando o arquivo em: {output_filename}...")
     try:
         with open(output_filename, "w", encoding="utf-8") as f:
-            json.dump(full_json_output, f, indent=2, ensure_ascii=False)
+            json.dump(output_json, f, indent=2, ensure_ascii=False)
         print(f"✅ Arquivo salvo com sucesso em: {output_filename}")
     except Exception as e:
         print(f"❌ Erro ao salvar o arquivo JSON: {e}")

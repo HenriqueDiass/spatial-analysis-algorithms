@@ -1,0 +1,13 @@
+# requirements.txt
+fastapi
+uvicorn[standard]
+pandas
+geopandas
+pysus
+sidrapy
+matplotlib
+geobr
+requests
+beautifulsoup4
+lxml
+python-multipart
