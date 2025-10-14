@@ -15,10 +15,7 @@ from src.infrastructure.shared import map_plotter
 
 
 class GetMapBirthrateUseCase:
-    """ 
-    Orquestra a busca, processamento e visualização do mapa de taxa de natalidade.
-    A responsabilidade de processamento de dados é delegada a BirthrateDataProcessor.
-    """
+ 
     def execute(self, state_abbr: str, year: int, group_code: str, metric_column: str) -> Optional[io.BytesIO]:
         
         # --- PASSO 1: COLETAR DADOS (ORQUESTRAÇÃO) ---

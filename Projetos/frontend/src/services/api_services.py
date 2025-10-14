@@ -6,31 +6,32 @@ from typing import Optional, Dict, Any, List
 from src.ui.constants import API_URL
 
 @st.cache_data
-def buscar_lista_de_tabelas() -> Optional[List[Dict[str, Any]]]:
-    # Lógica de buscar_lista_de_tabelas (mantida, usando API_URL do constants)
+def fetch_table_list() -> Optional[List[Dict[str, Any]]]:
+    """Fetches the list of all available tables from the API."""
     try:
         response = requests.get(f"{API_URL}/sidra/tables")
         response.raise_for_status()
-        # ... (Restante da lógica)
-        dados_brutos = response.json()
-        
-        lista_final_de_tabelas = []
-        for pesquisa in dados_brutos:
-            if "agregados" in pesquisa and isinstance(pesquisa["agregados"], list):
-                for tabela in pesquisa["agregados"]:
-                    lista_final_de_tabelas.append({
-                        "id": tabela["id"],
-                        "nome": tabela["nome"]
+
+        raw_data = response.json()
+
+        final_table_list = []
+        for research in raw_data:
+            if "agregados" in research and isinstance(research["agregados"], list):
+                for table in research["agregados"]:
+                    final_table_list.append({
+                        "id": table["id"],
+                        "name": table["nome"] # Keeping original Portuguese name for user selection
                     })
-        
-        return sorted(lista_final_de_tabelas, key=lambda x: int(x['id']))
+
+        # Sort by table ID (as integer)
+        return sorted(final_table_list, key=lambda x: int(x['id']))
     except requests.exceptions.RequestException as e:
-        st.error(f"Erro ao conectar com a API para buscar tabelas: {e}")
+        st.error(f"Error connecting to the API to fetch tables: {e}")
         return None
 
 @st.cache_data
-def buscar_metadados_da_tabela(table_id: int) -> Optional[Dict[str, Any]]:
-    # Lógica de buscar_metadados_da_tabela (mantida)
+def fetch_table_metadata(table_id: int) -> Optional[Dict[str, Any]]:
+    """Fetches the metadata (variables, levels, periods) for a specific table ID."""
     try:
         response = requests.get(f"{API_URL}/sidra/tables/{table_id}")
         response.raise_for_status()
@@ -38,42 +39,90 @@ def buscar_metadados_da_tabela(table_id: int) -> Optional[Dict[str, Any]]:
     except requests.exceptions.RequestException:
         return None
 
-def buscar_dados_sidra(params: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
-    """ Nova função para buscar dados de consulta da Seção 2. """
+def fetch_sidra_data(params: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+    """ Fetches specific consultation data from the API based on user parameters. """
     try:
         response = requests.get(f"{API_URL}/sidra/tables/fetch-specific", params=params)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        st.error("Erro ao buscar os dados na API.")
+        st.error("Error fetching data from the API.")
         if e.response is not None:
             try:
                 st.json(e.response.json())
             except:
-                st.write(f"Detalhes do erro: {e}")
+                st.write(f"Error details: {e}")
         return None
 
-def buscar_mapa_de_natalidade(state_abbr: str, year: int, metric_column: str) -> Optional[bytes]:
-    # Lógica de buscar_mapa_de_natalidade (mantida, usando API_URL do constants)
+def fetch_birthrate_map(state_abbr: str, year: int, metric_column: str) -> Optional[bytes]:
+    """ Requests the birth rate map image from the backend API. """
     base_url = f"{API_URL}/maps/{state_abbr}/{year}/birth-rate"
-    
+
     params = {
         "metric": metric_column,
-        "group_code": "DN" 
+        "group_code": "DN" # Declaração de Nascidos
     }
-    
-    st.info(f"Chamando API: {base_url} com métrica: {metric_column}")
-    
+
+    st.info(f"Calling API: {base_url} with metric: {metric_column}")
+
     try:
-        response = requests.get(base_url, params=params, timeout=60) 
+        response = requests.get(base_url, params=params, timeout=60)
         response.raise_for_status()
         return response.content
+        # response.content contains the raw bytes (PNG image) from the backend
     except requests.exceptions.RequestException as e:
-        st.error(f"❌ Erro ao gerar o mapa na API.")
+        st.error(f"❌ Error generating map in the API.")
         if e.response is not None:
-             try:
-                 error_detail = e.response.json().get("detail", e.response.text)
-                 st.write(f"Detalhes do erro do servidor: {error_detail}")
-             except:
-                 st.write(f"Detalhes do erro de rede: {e}")
+              try:
+                  error_detail = e.response.json().get("detail", e.response.text)
+                  st.write(f"Server error details: {error_detail}")
+              except:
+                  st.write(f"Network error details: {e}")
+        return None
+    
+@st.cache_data
+def fetch_pysus_systems() -> Optional[List[Dict[str, Any]]]:
+    """Fetches the list of all supported PySUS systems from the API."""
+    try:
+        response = requests.get(f"{API_URL}/pysus/systems/")
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error connecting to the API to fetch PySUS systems: {e}")
+        return None
+
+@st.cache_data
+def fetch_sinan_variables() -> Optional[Dict[str, Any]]:
+    """Fetches the list of variables (diseases/conditions) available for SINAN."""
+    try:
+        response = requests.get(f"{API_URL}/pysus/sinan/variables")
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error connecting to the API to fetch SINAN variables: {e}")
+        return None
+def fetch_sinan_data(params: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
+    """Requests a summary of SINAN data from the API based on disease, year, and state."""
+    
+    # A API espera os anos e estados como listas, que já estão no dicionário 'params'
+    base_url = f"{API_URL}/pysus/sinan/fetch-data"
+
+    st.info(f"Sending query to API: {base_url} with parameters: {params}")
+    
+    try:
+        # Nota: O 'requests' lida automaticamente com listas nos parâmetros (years=[2022] vira ?years=2022)
+        response = requests.get(base_url, params=params, timeout=120) 
+        response.raise_for_status()
+        
+        # O backend retorna uma lista de dicionários (o sumário de casos)
+        return response.json() 
+        
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error fetching SINAN data from the API.")
+        if e.response is not None:
+              try:
+                  error_detail = e.response.json().get("detail", e.response.text)
+                  st.write(f"Server error details: {error_detail}")
+              except:
+                  st.write(f"Network error details: {e}")
         return None

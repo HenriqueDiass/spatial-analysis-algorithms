@@ -1,39 +1,37 @@
-# src/infrastructure/controllers/pysus/cnes/fetch_data_cnes_controller.py
-
 from fastapi.responses import JSONResponse
 from fastapi import status, HTTPException
 from typing import List, Optional
+
 from src.domain.use_cases.pysus.cnes.fetch_data_cnes_use_case import FetchDataCnesUseCase
 
-
 def fetch_cnes_data_controller(group_code: str, years: List[int], states: Optional[List[str]]):
-    
+    """
+    Controller para buscar um resumo de dados do CNES.
+    """
     try:
-        if not years:
-            raise HTTPException(status_code=400, detail="O parâmetro 'years' é obrigatório.")
-
         params = {
-            "group_code": group_code.upper(),
+            "group_code": group_code,
             "years": years,
             "states": [st.upper() for st in states] if states else None
         }
 
         use_case = FetchDataCnesUseCase()
-        cnes_data = use_case.execute(**params)
+        # O UseCase agora já retorna a lista de resumo pronta
+        summary_list = use_case.execute(**params)
 
-        if cnes_data:
-            return JSONResponse(
-                content=cnes_data,
-                status_code=status.HTTP_200_OK
-            )
+        if summary_list:
+            summary_response = {
+                "metadata": {
+                    "system": "CNES",
+                    "parameters": params,
+                    "total_records_found": sum(item['total'] for item in summary_list)
+                },
+                "summary_by_municipality": summary_list
+            }
+            return JSONResponse(content=summary_response, status_code=status.HTTP_200_OK)
         else:
-            return JSONResponse(
-                content={"message": "Nenhum dado encontrado para os parâmetros fornecidos."},
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+            raise HTTPException(status_code=404, detail="Nenhum dado encontrado para os parâmetros fornecidos.")
 
     except Exception as e:
-        return JSONResponse(
-            content={"error": f"Ocorreu um erro interno: {e}"},
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        print(f"Erro interno ao buscar dados do CNES: {e}")
+        raise HTTPException(status_code=500, detail="Ocorreu um erro interno no servidor.")

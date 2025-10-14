@@ -1,33 +1,49 @@
-# src/domain/use-cases/pysus/cnes/fetch-data-cnes.use-case.py
-"""
-Use case to fetch data from the CNES system using the PySUS library.
-"""
 import pandas as pd
 from pysus.ftp.databases import CNES
-from typing import List, Dict, Any, Optional
+from typing import List, Optional, Dict
 
 class FetchDataCnesUseCase:
-    
-    def execute(self, group_code: str, years: List[int], states: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    """
+    Caso de uso para buscar dados do CNES e já retornar um resumo agregado por município.
+    """
+    def execute(self, group_code: str, years: List[int], states: Optional[List[str]] = None, columns: Optional[List[str]] = None) -> Optional[List[Dict]]:
+        """
+        Executa a busca de dados e o processamento do resumo.
+
+        Retorna:
+            Uma lista de dicionários com o total de registros por município.
+        """
         try:
+            print(f"Buscando dados no CNES para o grupo '{group_code}' para resumir...")
             cnes_db = CNES().load()
             files_to_download = cnes_db.get_files(group=group_code, uf=states, year=years)
 
             if not files_to_download:
-                return []
+                print("Nenhum arquivo do CNES encontrado.")
+                return None
 
-            downloaded_objects = cnes_db.download(files_to_download)
-            list_of_dataframes = [parquet_object.to_dataframe() for parquet_object in downloaded_objects]
+            downloaded_dataset = cnes_db.download(files_to_download)
+            if downloaded_dataset is None:
+                return None
             
-            if not list_of_dataframes:
-                return []
+            coluna_municipio = 'CODUFMUN' # Exemplo para o grupo 'ST' (Estabelecimentos)
+            dataframe = downloaded_dataset.to_dataframe(columns=[coluna_municipio])
             
-            consolidated_dataframe = pd.concat(list_of_dataframes, ignore_index=True)
+            if dataframe.empty:
+                return None
+
+            # --- O CÁLCULO DO RESUMO É FEITO AQUI DENTRO ---
+            print("Calculando resumo por município...")
+            summary_df = dataframe.groupby(coluna_municipio).size().reset_index(name='total')
             
-            consolidated_dataframe = consolidated_dataframe.astype(object).where(pd.notnull(consolidated_dataframe), None)
+            # Renomeia as colunas para um formato padronizado
+            summary_df.rename(columns={coluna_municipio: 'municipality_code'}, inplace=True)
             
-            return consolidated_dataframe.to_dict(orient='records')
+            print(f"Resumo do CNES gerado para {len(summary_df)} municípios.")
+            
+            # Retornamos apenas a lista com o resumo, e não o DataFrame gigante
+            return summary_df.to_dict(orient='records')
             
         except Exception as e:
-            print(f"An error occurred during CNES data fetching: {e}") # In a real app, this would be `logging.error(...)`
-            return []
+            print(f"Ocorreu um erro durante a busca de dados do CNES: {e}")
+            return None

@@ -7,94 +7,96 @@ from typing import Optional, Dict, Any, List
 
 
 from src.services.api_services import (
-     buscar_lista_de_tabelas, 
-     buscar_metadados_da_tabela, 
-     buscar_dados_sidra
+     fetch_table_list, 
+     fetch_table_metadata, 
+     fetch_sidra_data
 )
 
-def display_tabela_selection_section() -> Optional[Dict[str, Any]]:
-    """ SEÇÃO 1: Seleção da Tabela. Retorna os metadados da tabela selecionada. """
-    st.header("1. Selecione a Tabela")
-    
-    lista_tabelas_formatada = buscar_lista_de_tabelas()
-    metadados = None
+def display_table_selection_section() -> Optional[Dict[str, Any]]:
+    """ SECTION 1: Table Selection. Returns the metadata for the selected table. """
+    st.header("1. Select the Table")
 
-    if lista_tabelas_formatada:
-        opcoes_tabela = [f"{t['id']} - {t['nome']}" for t in lista_tabelas_formatada]
-        
-        tabela_selecionada_str = st.selectbox(
-            label="Escolha uma tabela para inspecionar e consultar",
-            options=opcoes_tabela,
+    formatted_table_list = fetch_table_list() # Renamed
+    metadata = None
+
+    if formatted_table_list:
+        table_options = [f"{t['id']} - {t['name']}" for t in formatted_table_list] # Used 'name' key
+
+        selected_table_str = st.selectbox(
+            label="Choose a table to inspect and query",
+            options=table_options,
             index=None,
-            placeholder="Digite o código ou nome da tabela para pesquisar..."
+            placeholder="Type the code or name of the table to search..."
         )
 
-        if tabela_selecionada_str:
-            id_selecionado = tabela_selecionada_str.split(" - ")[0]
-            with st.spinner(f"Buscando metadados da tabela {id_selecionado}..."):
-                metadados = buscar_metadados_da_tabela(int(id_selecionado))
-                
-        return metadados
+        if selected_table_str:
+            selected_id = selected_table_str.split(" - ")[0]
+            with st.spinner(f"Fetching metadata for table {selected_id}..."):
+                metadata = fetch_table_metadata(int(selected_id)) # Renamed
+
+        return metadata
     else:
-        st.warning("Não foi possível carregar a lista de tabelas da API. Verifique se o backend está rodando corretamente.")
+        st.warning("Could not load the table list from the API. Check if the backend is running correctly.")
         return None
 
 
-def display_sidra_query_section(metadados: Optional[Dict[str, Any]]):
-    """ SEÇÃO 2: Consulta de Dados. """
+def display_sidra_query_section(metadata: Optional[Dict[str, Any]]):
+    """ SECTION 2: Data Query. """
     st.divider()
-    st.header("2. Consultar Dados Gerais do SIDRA")
+    st.header("2. Query General SIDRA Data")
 
-    if metadados is None:
-        st.info("Selecione uma tabela na seção 1 para habilitar o formulário de consulta de dados.")
+    if metadata is None:
+        st.info("Select a table in section 1 to enable the data query form.")
         return
 
-    st.info(f"Parâmetros de consulta para a tabela: **{metadados.get('tabela_nome')}**")
+    st.info(f"Query parameters for the table: **{metadata.get('tabela_nome')}**") # Keeping 'tabela_nome' as it might be raw Portuguese output
 
-    opcoes_niveis = {item['nome']: item['id'].replace('N', '') for item in metadados.get('niveis_territoriais', [])}
-    opcoes_variaveis = {item['nome']: item['id'] for item in metadados.get('variaveis', [])}
+    # Renamed: 'niveis' -> 'levels', 'variaveis' -> 'variables'
+    level_options = {item['nome']: item['id'].replace('N', '') for item in metadata.get('niveis_territoriais', [])}
+    variable_options = {item['nome']: item['id'] for item in metadata.get('variaveis', [])}
 
-    # Lógica do período
-    opcoes_periodo = ["last", "all"]
-    periodo_disponivel = metadados.get('periodo', {}).get('disponibilidade')
-    if isinstance(periodo_disponivel, list):
-        opcoes_periodo.extend(sorted(periodo_disponivel, reverse=True))
-    elif isinstance(periodo_disponivel, str):
-        anos_encontrados = re.findall(r'\b\d{4}\b', periodo_disponivel)
-        if anos_encontrados:
-            opcoes_periodo.extend(sorted(list(set(anos_encontrados)), reverse=True))
+    # Period logic
+    period_options = ["last", "all"]
+    available_period = metadata.get('periodo', {}).get('disponibilidade')
+    if isinstance(available_period, list):
+        period_options.extend(sorted(available_period, reverse=True))
+    elif isinstance(available_period, str):
+        found_years = re.findall(r'\b\d{4}\b', available_period)
+        if found_years:
+            period_options.extend(sorted(list(set(found_years)), reverse=True))
 
     with st.form("query_form"):
         col1, col2 = st.columns(2)
 
         with col1:
-            st.text_input("Código da Tabela", value=metadados.get('tabela_id'), disabled=True)
-            nivel_selecionado_label = st.selectbox("Nível Territorial*", options=list(opcoes_niveis.keys()), key="nivel_geral")
-            ibge_code_input = st.text_input("Código Territorial", value="all", help="Use 'all' ou um código de UF (ex: 26 para PE)", key="ibge_geral")
+            st.text_input("Table Code", value=metadata.get('tabela_id'), disabled=True)
+            selected_level_label = st.selectbox("Territorial Level*", options=list(level_options.keys()), key="general_level") # Renamed key
+            ibge_code_input = st.text_input("Territorial Code", value="all", help="Use 'all' or a UF code (ex: 26 for PE)", key="general_ibge_code") # Renamed key
 
         with col2:
-            variaveis_selecionadas_labels = st.multiselect("Variável(eis) (opcional)", options=list(opcoes_variaveis.keys()), key="var_geral")
-            period_input = st.selectbox("Período*", options=opcoes_periodo, key="periodo_geral")
-        
-        submitted = st.form_submit_button("Buscar Dados")
+            selected_variable_labels = st.multiselect("Variable(s) (optional)", options=list(variable_options.keys()), key="general_var") # Renamed key
+            period_input = st.selectbox("Period*", options=period_options, key="general_period") # Renamed key
+
+        submitted = st.form_submit_button("Fetch Data")
 
     if submitted:
-        territorial_level_code = opcoes_niveis[nivel_selecionado_label]
-        variable_codes = [opcoes_variaveis[label] for label in variaveis_selecionadas_labels]
+        territorial_level_code = level_options[selected_level_label]
+        variable_codes = [variable_options[label] for label in selected_variable_labels]
         variable_param = ",".join(variable_codes) if variable_codes else None
 
         params = {
-            "table_code": metadados.get('tabela_id'),
+            "table_code": metadata.get('tabela_id'),
             "territorial_level": territorial_level_code,
             "ibge_territorial_code": ibge_code_input,
             "variable": variable_param,
             "period": period_input,
         }
-        
+
+        # Remove None/empty values
         params = {k: v for k, v in params.items() if v}
 
-        with st.spinner("Consultando a API do Sidra..."):
-            dados = buscar_dados_sidra(params)
-            if dados:
-                st.success(f"{len(dados)} registros encontrados!")
-                st.dataframe(pd.DataFrame(dados))
+        with st.spinner("Querying the Sidra API..."):
+            data = fetch_sidra_data(params) # Renamed function call
+            if data:
+                st.success(f"{len(data)} records found!")
+                st.dataframe(pd.DataFrame(data))

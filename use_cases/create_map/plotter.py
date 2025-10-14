@@ -1,9 +1,9 @@
 import os
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import geopandas as gpd
 import geobr
 
-# <<< MUDANÇA: Importa o seu módulo de estilos avançado
 from shared.map_components import map_styles
 
 def plot(
@@ -21,18 +21,15 @@ def plot(
     print(f"\n--- [Visualização] Iniciando desenho do mapa: '{title}' ---")
     
     try:
-        # <<< MUDANÇA: Carrega o dicionário de estilos específico para este mapa
         style = map_styles.STYLES['advanced_choropleth']
         
         print(" -> [Visualização] Buscando mapa do Brasil para usar como fundo...")
         brasil_gdf = geobr.read_state(year=2020)
         
-        # <<< MUDANÇA: Usa a cor de fundo do nosso manual de estilo
         fig, ax = plt.subplots(1, 1, figsize=(12, 12), facecolor=style['figure']['facecolor'])
         ax.set_aspect('equal')
 
         # --- DESENHANDO AS CAMADAS ---
-        # Camada 1: Desenha a base do Brasil usando as cores do manual de estilo
         print(" -> [Visualização] Desenhando camada de fundo (zorder=1)...")
         brasil_gdf.plot(
             ax=ax,
@@ -42,7 +39,6 @@ def plot(
             zorder=1
         )
 
-        # Camada 2: Desenha o mapa coroplético
         print(f" -> [Visualização] Desenhando mapa coroplético de {state_abbr} (zorder=2)...")
         gdf[column_to_plot] = gdf[column_to_plot].fillna(0)
         vmax = gdf[column_to_plot].quantile(0.95)
@@ -71,8 +67,18 @@ def plot(
             ax.set_xlim(minx - buffer_x, maxx + buffer_x)
             ax.set_ylim(miny - buffer_y, maxy + buffer_y)
 
+        # ADICIONA O CONTORNO ANTES DE DESLIGAR OS EIXOS
+        rect = patches.Rectangle(
+            (0, 0), 1, 1, 
+            transform=ax.transAxes,
+            linewidth=1.5,
+            edgecolor='black',
+            facecolor='none',
+            zorder=10
+        )
+        ax.add_patch(rect)
+
         ax.set_axis_off()
-        # <<< MUDANÇA: Usa o estilo de fonte do título do nosso manual
         ax.set_title(title, fontdict=style['title'], pad=20)
         
         output_dir = os.path.dirname(output_path)

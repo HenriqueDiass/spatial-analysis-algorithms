@@ -24,13 +24,15 @@ def get_age_group(age: Any) -> str:
 
 def filter_dataframe_by_states(dataframe: pd.DataFrame, states: List[str], municipality_code_column: str) -> pd.DataFrame:
     """Filters a DataFrame based on a list of state abbreviations."""
-    if not states or not municipality_code_column in dataframe.columns:
+    if not states or municipality_code_column not in dataframe.columns:
         return dataframe
     
     ibge_codes = [STATE_ABBR_TO_IBGE_CODE.get(s.upper()) for s in states if s.upper() in STATE_ABBR_TO_IBGE_CODE]
     if not ibge_codes:
+        # Retorna um DataFrame vazio se não houver códigos IBGE válidos para os estados fornecidos
         return pd.DataFrame(columns=dataframe.columns)
 
-    # Ensure the municipality column is treated as a string for safe filtering.
+    # O PONTO-CHAVE: Filtra as linhas verificando se os DOIS PRIMEIROS DÍGITOS
+    # do código do município (que representam o código do estado) estão na lista ibge_codes.
     mask = dataframe[municipality_code_column].astype(str).str[:2].isin(ibge_codes)
     return dataframe[mask]

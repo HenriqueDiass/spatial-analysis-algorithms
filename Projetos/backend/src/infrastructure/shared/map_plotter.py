@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches 
 import geobr 
 
-# IMPORTAÇÃO ESSENCIAL: Agora estamos buscando o estilo do seu módulo compartilhado
-# Assumindo que este código está em um lugar onde 'shared.map_components' é acessível
 from src.infrastructure.shared.map_styles import STYLES 
 
 def plot_map(
@@ -22,46 +20,35 @@ def plot_map(
     """
     print(f"\n--- [Visualização] Iniciando desenho do mapa: '{title}' ---")
     
-    # Adicionando um fallback para o caso de a importação de cores falhar
     style = STYLES.get('advanced_choropleth')
     if not style:
-         print("❌ ERRO: O estilo 'advanced_choropleth' não foi encontrado no módulo STYLES.")
-         return None
+        print("❌ ERRO: O estilo 'advanced_choropleth' não foi encontrado no módulo STYLES.")
+        return None
 
     try:
         # --- CARREGAMENTO E CONFIGURAÇÃO INICIAL ---
         print(" -> [Visualização] Buscando mapa do Brasil para usar como fundo...")
         brasil_gdf = geobr.read_state(code_state='all', year=2020) 
         
-        # Usamos o figsize quadrado padrão para todos os estados
-        # O plotter oficial usava (12, 12)
         fig, ax = plt.subplots(1, 1, figsize=(12, 12)) 
         ax.set_aspect('equal')
-        
-        # --- LÓGICA: FUNDO DO OCEANO (ZORDER=0) ---
-        # Cor do oceano: #a2d9f7 (fixa no seu plotter original)
         ocean_patch = patches.Rectangle(
             (-180, -90), 360, 180,
             linewidth=0, edgecolor='none', facecolor='#a2d9f7', zorder=0
         )
         ax.add_patch(ocean_patch)
 
-        # --- LÓGICA: CAMADA DE CONTEXTO (BRASIL) (ZORDER=1) ---
         print(" -> [Visualização] Desenhando camada de fundo (zorder=1)...")
         brasil_gdf.plot(
             ax=ax,
-            # Usando as cores do 'context_layer' do seu STYLES
             color=style['context_layer']['facecolor'],
             edgecolor=style['context_layer']['edgecolor'],
             linewidth=style['context_layer']['linewidth'],
             zorder=1
         )
         
-        # --- CONFIGURAÇÃO DA BARRA DE CORES (LEGENDA) ---
-        # Posição e tamanho da legenda (do plotter oficial)
         cax = ax.inset_axes([0.02, 0.05, 0.2, 0.01]) 
 
-        # --- LÓGICA: CÁLCULO DE VMAX E PLOTAGEM (ZORDER=2) ---
         print(f" -> [Visualização] Desenhando mapa coroplético de {state_abbr} (zorder=2)...")
         gdf[column_to_plot] = gdf[column_to_plot].fillna(0)
         vmax = gdf[column_to_plot].quantile(0.95)
@@ -70,7 +57,6 @@ def plot_map(
         gdf.plot(
             ax=ax, 
             column=column_to_plot, 
-            # Usando as cores do 'choropleth_layer' do seu STYLES
             cmap=style['choropleth_layer']['cmap'],
             linewidth=style['choropleth_layer']['linewidth'],
             edgecolor=style['choropleth_layer']['edgecolor'],
@@ -78,13 +64,21 @@ def plot_map(
             vmin=0, 
             vmax=vmax,
             zorder=2,
-            # Usando 'label': "" como no plotter oficial
             legend_kwds={'cax': cax, 'label': "", 'orientation': "horizontal"}
         )
 
         label_color = STYLES.get('legend', {}).get('labelcolor', STYLES['advanced_choropleth']['title']['color'])
         
-        cax.spines[:].set_visible(False)
+        # ================================================================= #
+        # ==== ✅ MUDANÇA AQUI: Adiciona o contorno preto na legenda ✅ ===== #
+        # ================================================================= #
+        # Em vez de remover a borda (spines), nós a estilizamos.
+        for spine in cax.spines.values():
+            spine.set_visible(True)
+            spine.set_edgecolor('black') # Cor do contorno
+            spine.set_linewidth(1)       # Espessura do contorno (ajuste se necessário)
+        # ================================================================= #
+        
         cax.tick_params(axis='x', bottom=False, labelbottom=True)
         cax.xaxis.label.set_color(label_color)
         cax.tick_params(axis='x', colors=label_color)
@@ -97,12 +91,10 @@ def plot_map(
         if not state_boundary.empty:
             minx, miny, maxx, maxy = state_boundary.total_bounds
             
-            # Corte especial para Pernambuco para esconder Fernando de Noronha
             if state_abbr.upper() == 'PE':
                 print(" -> [Visualização] PE detectado. Cortando a longitude para focar no continente.")
-                maxx = -34.5 # Valor do plotter oficial
+                maxx = -34.5
 
-            # Buffer de 20% do plotter oficial
             buffer_x = (maxx - minx) * 0.20 
             buffer_y = (maxy - miny) * 0.20
             ax.set_xlim(minx - buffer_x, maxx + buffer_x)
@@ -118,7 +110,7 @@ def plot_map(
             format='png', 
             dpi=300, 
             bbox_inches='tight',
-            pad_inches=0 # Usando o pad_inches do plotter oficial
+            pad_inches=0
         )
         buf.seek(0)
         
@@ -127,6 +119,9 @@ def plot_map(
         return buf
 
     except Exception as e:
+        # CORREÇÃO: 'fig' pode não ser definido se o erro for antes.
+        # Adicionamos uma verificação.
         print(f"❌ ERRO ao gerar a imagem do mapa: {e}")
-        if fig is not None: plt.close(fig)
+        if 'fig' in locals() and fig is not None: 
+            plt.close(fig)
         return None

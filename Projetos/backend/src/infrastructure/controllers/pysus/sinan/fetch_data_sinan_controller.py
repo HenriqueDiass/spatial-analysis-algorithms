@@ -1,52 +1,44 @@
-# src/infrastructure/controllers/pysus/sinan/fetch_data_sinan_controller.py
-
 from fastapi.responses import JSONResponse
 from fastapi import status, HTTPException
 from typing import List, Optional
-import pandas as pd
+# --- NOVA IMPORTAÇÃO ---
+from fastapi.concurrency import run_in_threadpool
 
-# Importe o UseCase correspondente
 from src.domain.use_cases.pysus.sinan.fetch_data_sinan_use_case import FetchDataSinanUseCase
 
-# Garanta que o nome da função está correto
-def fetch_sinan_data_controller(disease_code: str, years: List[int], states: Optional[List[str]]):
+# A função do controller agora também é 'async def'
+async def fetch_sinan_data_controller(disease_code: str, years: List[int], states: Optional[List[str]]):
     """
-    Controller para buscar os dados do SINAN e o sumário de casos por município.
+    Controller que busca um resumo de dados do SINAN de forma não-bloqueante.
     """
     try:
-        if not years:
-            raise HTTPException(status_code=400, detail="O parâmetro 'years' é obrigatório.")
-
         params = {
-            "disease_code": disease_code.upper(),
+            "disease_code": disease_code,
             "years": years,
-            "states": [st.upper() for st in states] if states else None
+            "states": states # O UseCase já lida com a conversão para maiúsculas etc.
         }
 
         use_case = FetchDataSinanUseCase()
-        # O caso de uso do SINAN retorna uma tupla com três valores
-        sinan_data_df, summary_list, filter_message = use_case.execute(**params)
 
-        if isinstance(sinan_data_df, pd.DataFrame) and not sinan_data_df.empty:
-            # Monta a resposta com as três chaves
-            response_data = {
-                "filter_info": filter_message,
-                "data": sinan_data_df.to_dict(orient='records'),
+        # --- A MÁGICA ACONTECE AQUI ---
+        # Em vez de: summary_list = use_case.execute(**params)
+        # Nós pedimos para o FastAPI rodar a função pesada 'use_case.execute'
+        # em uma thread pool, e esperamos ('await') pelo resultado.
+        summary_list = await run_in_threadpool(use_case.execute, **params)
+        
+        if summary_list:
+            summary_response = {
+                "metadata": {
+                    "system": "SINAN",
+                    "parameters": params,
+                    "total_records_found": sum(item['total_cases'] for item in summary_list)
+                },
                 "summary_by_municipality": summary_list
             }
-            return JSONResponse(
-                content=response_data,
-                status_code=status.HTTP_200_OK
-            )
+            return JSONResponse(content=summary_response, status_code=status.HTTP_200_OK)
         else:
-            return JSONResponse(
-                content={"message": "Nenhum dado encontrado para os parâmetros fornecidos."},
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+            raise HTTPException(status_code=404, detail="Nenhum dado encontrado.")
 
     except Exception as e:
         print(f"Erro interno ao buscar dados do SINAN: {e}")
-        return JSONResponse(
-            content={"error": f"Ocorreu um erro interno no servidor."},
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        raise HTTPException(status_code=500, detail="Ocorreu um erro interno no servidor.")

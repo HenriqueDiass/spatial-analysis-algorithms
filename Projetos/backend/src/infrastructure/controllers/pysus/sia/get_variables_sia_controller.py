@@ -5,9 +5,7 @@ from fastapi import status
 from src.domain.use_cases.pysus.sia.get_variables_sia_use_case import GetVariablesSiaUseCase
 
 def get_variables_sia_controller():
-    """
-    Controller para lidar com a requisição das variáveis (grupos) do SIA.
-    """
+    
     try:
         use_case = GetVariablesSiaUseCase()
         sia_groups = use_case.execute()
