@@ -1,0 +1,10 @@
+# --- Dependências para a Interface do Usuário (Frontend) ---
+
+# Framework do Frontend
+streamlit
+
+# Cliente HTTP para comunicação com a API
+requests
+
+# Manipulação de Dados para exibição em tabelas
+pandas

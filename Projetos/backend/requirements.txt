@@ -1,13 +1,24 @@
-# requirements.txt
+# --- Dependências para a API (Backend) ---
+
+# Framework e Servidor
 fastapi
 uvicorn[standard]
+
+# Manipulação de Dados
 pandas
 geopandas
+
+# Acesso a Fontes de Dados Externas
 pysus
 sidrapy
-matplotlib
 geobr
 requests
 beautifulsoup4
 lxml
-python-multipart
+
+# Leitura de Formatos de Arquivo
+pyarrow
+dbfread
+
+# Geração de Visualizações
+matplotlib
