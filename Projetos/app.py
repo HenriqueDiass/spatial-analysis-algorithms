@@ -1,10 +1,19 @@
-# app.py
+# Projetos/app.py
 import threading
 import uvicorn
-import sys
 import streamlit.web.cli as stcli
-from backend.main import app as fastapi_app  # Importa sua aplicação FastAPI
+import sys
+import os # Novo
+from pathlib import Path # Novo
 
+# NOVO: Adicione o diretório pai ('Projetos/') ao path do sistema.
+# Isso permite que importações como 'from backend.main import...' e
+# 'from backend.src. ...' funcionem corretamente.
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.append(str(BASE_DIR))
+
+# Agora esta importação deve funcionar
+from backend.main import app as fastapi_app
 def run_api():
     """Roda a API FastAPI em localhost:8000 (acessível internamente pelo Streamlit)."""
     # Importante: O host 0.0.0.0 garante que o servidor escute em todas as interfaces,

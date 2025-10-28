@@ -1,25 +1,22 @@
-# main.py
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# --- 1. IMPORTS DOS ROTEADORES ---
+# --- 1. IMPORTS DOS ROTEADORES (CORRIGIDOS) ---
 
 # Módulo PySUS
-from src.infrastructure.controllers.pysus.systems.routes import systems_router 
-from src.infrastructure.controllers.pysus.cnes.routes import cnes_router
-from src.infrastructure.controllers.pysus.sia.routes import sia_router
-from src.infrastructure.controllers.pysus.sih.routes import sih_router
-from src.infrastructure.controllers.pysus.sim.routes import sim_router
-from src.infrastructure.controllers.pysus.sinan.routes import sinan_router
-from src.infrastructure.controllers.pysus.sinasc.routes import sinasc_router
+from backend.src.infrastructure.controllers.pysus.systems.routes import systems_router 
+from backend.src.infrastructure.controllers.pysus.cnes.routes import cnes_router
+from backend.src.infrastructure.controllers.pysus.sia.routes import sia_router
+from backend.src.infrastructure.controllers.pysus.sih.routes import sih_router
+from backend.src.infrastructure.controllers.pysus.sim.routes import sim_router
+from backend.src.infrastructure.controllers.pysus.sinan.routes import sinan_router
+from backend.src.infrastructure.controllers.pysus.sinasc.routes import sinasc_router
 
 # Módulo Sidra
-from src.infrastructure.controllers.sidra.routes import sidra_router 
+from backend.src.infrastructure.controllers.sidra.routes import sidra_router 
 
 # Módulo de Mapas
-from src.infrastructure.controllers.maps.routes import maps_router # <-- ADICIONE ESTA LINHA
-
+from backend.src.infrastructure.controllers.maps.routes import maps_router
 
 # --- 2. INSTÂNCIA PRINCIPAL DA API ---
 app = FastAPI(
