@@ -13,7 +13,6 @@ if systems_list:
     st.header("Available Information Systems")
     st.write("Click on a system to view its available variables and detailed query options.")
 
-    # Colunas para exibir os sistemas lado a lado (opcional, mas fica mais limpo)
     cols = st.columns(3)
     
     for i, system in enumerate(systems_list):

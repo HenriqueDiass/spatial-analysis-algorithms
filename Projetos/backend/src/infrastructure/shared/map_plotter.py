@@ -69,9 +69,6 @@ def plot_map(
 
         label_color = STYLES.get('legend', {}).get('labelcolor', STYLES['advanced_choropleth']['title']['color'])
         
-        # ================================================================= #
-        # ==== ✅ MUDANÇA AQUI: Adiciona o contorno preto na legenda ✅ ===== #
-        # ================================================================= #
         # Em vez de remover a borda (spines), nós a estilizamos.
         for spine in cax.spines.values():
             spine.set_visible(True)

@@ -1,0 +1,33 @@
+
+# Framework do Frontend
+streamlit
+
+# Cliente HTTP para comunicação com a API
+requests
+
+# Manipulação de Dados para exibição em tabelas
+pandas
+
+#--------------------------------------------
+# Framework e Servidor
+fastapi
+uvicorn[standard]
+
+# Manipulação de Dados
+pandas
+geopandas
+
+# Acesso a Fontes de Dados Externas
+pysus
+sidrapy
+geobr
+requests
+beautifulsoup4
+lxml
+
+# Leitura de Formatos de Arquivo
+pyarrow
+dbfread
+
+# Geração de Visualizações
+matplotlib
