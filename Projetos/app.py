@@ -5,6 +5,11 @@ import streamlit.web.cli as stcli
 import sys
 import os 
 from pathlib import Path 
+import sys
+import os
+
+# Garante que o diretório backend/ está no caminho de importação
+sys.path.append(os.path.join(os.path.dirname(__file__), "backend"))
 
 # --- CONFIGURAÇÃO DO CAMINHO PARA IMPORTAÇÕES (AQUI ESTAVA O PROBLEMA) ---
 # Adiciona o diretório 'Projetos/' (onde app.py está) ao caminho do Python
