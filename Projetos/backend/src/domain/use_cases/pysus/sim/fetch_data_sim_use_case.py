@@ -8,7 +8,7 @@ import pyarrow.parquet as pq
 from pathlib import Path
 import traceback 
 
-from src.infrastructure.shared import data_utils 
+from backend.src.infrastructure.shared import data_utils 
 
 class FetchDataSimUseCase:
     """
