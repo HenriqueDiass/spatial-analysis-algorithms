@@ -1,6 +1,6 @@
 from fastapi.responses import JSONResponse
 from fastapi import status, HTTPException
-from src.domain.use_cases.sidra.fetch_specific_table_sidra_use_case import FetchSpecificTableSidraUseCase
+from backend.src.domain.use_cases.sidra.fetch_specific_table_sidra_use_case import FetchSpecificTableSidraUseCase
 
 
 def fetch_specific_table_controller(params: dict):

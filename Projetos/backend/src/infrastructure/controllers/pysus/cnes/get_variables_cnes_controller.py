@@ -3,7 +3,7 @@
 from fastapi.responses import JSONResponse
 from fastapi import status
 
-from src.domain.use_cases.pysus.cnes.get_variables_cnes_use_case import GetVariablesCnesUseCase
+from backend.src.domain.use_cases.pysus.cnes.get_variables_cnes_use_case import GetVariablesCnesUseCase
 
 def get_variables_cnes_controller():
  

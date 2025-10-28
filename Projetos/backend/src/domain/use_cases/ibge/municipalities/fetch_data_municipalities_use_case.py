@@ -5,7 +5,7 @@ for all municipalities of a given state.
 """
 from typing import List, Dict, Any, Optional
 import time
-from src.infrastructure.shared import ibge_client
+from backend.src.infrastructure.shared import ibge_client
 
 # Constants to avoid "magic strings" and improve readability.
 IBGE_TERRITORIAL_LEVEL_MUNICIPALITY = "N6"

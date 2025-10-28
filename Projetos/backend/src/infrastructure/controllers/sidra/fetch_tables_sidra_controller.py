@@ -1,6 +1,6 @@
 from fastapi.responses import JSONResponse
 from fastapi import status, HTTPException
-from src.domain.use_cases.sidra.fetch_tables_sidra_use_case import FetchTablesSidrapyUseCase
+from backend.src.domain.use_cases.sidra.fetch_tables_sidra_use_case import FetchTablesSidrapyUseCase
 
 def fetch_all_tables_controller():
     try:

@@ -2,7 +2,7 @@
 
 from fastapi.responses import JSONResponse
 from fastapi import status
-from src.domain.use_cases.pysus.sinasc.get_variables_sinasc_use_case import GetVariablesSinascUseCase
+from backend.src.domain.use_cases.pysus.sinasc.get_variables_sinasc_use_case import GetVariablesSinascUseCase
 
 def get_variables_sinasc_controller():
     """

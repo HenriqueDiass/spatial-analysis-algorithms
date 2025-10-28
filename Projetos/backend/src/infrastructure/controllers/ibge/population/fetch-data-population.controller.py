@@ -1,6 +1,6 @@
 # src/infrastructure/controllers/ibge/population/fetch-data-population.controller.py
 from fastapi import HTTPException
-from src.domain.use_cases.ibge.population import FetchDataPopulationUseCase
+from backend.src.domain.use_cases.ibge.population import FetchDataPopulationUseCase
 
 def fetch_population_by_state(state_abbr: str, year: int):
     """

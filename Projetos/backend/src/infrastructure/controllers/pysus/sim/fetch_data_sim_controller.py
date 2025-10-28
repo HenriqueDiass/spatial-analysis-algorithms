@@ -7,7 +7,7 @@ from typing import List, Optional
 # --- IMPORTAÇÃO CHAVE ---
 from fastapi.concurrency import run_in_threadpool 
 
-from src.domain.use_cases.pysus.sim.fetch_data_sim_use_case import FetchDataSimUseCase
+from backend.src.domain.use_cases.pysus.sim.fetch_data_sim_use_case import FetchDataSimUseCase
 
 # O controller é async def, como o do SINAN
 async def fetch_sim_data_controller(group_code: str, years: List[int], states: Optional[List[str]]):

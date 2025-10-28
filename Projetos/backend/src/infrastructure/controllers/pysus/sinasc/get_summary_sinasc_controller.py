@@ -5,7 +5,7 @@ from fastapi import status, HTTPException
 from typing import List, Optional
 
 # Importe o UseCase correspondente
-from src.domain.use_cases.pysus.sinasc.get_summary_sinasc_use_case import GetSummarySinascUseCase
+from backend.src.domain.use_cases.pysus.sinasc.get_summary_sinasc_use_case import GetSummarySinascUseCase
 
 # Garanta que o nome da função está correto
 def get_sinasc_summary_controller(group_code: str, years: List[int], states: Optional[List[str]]):

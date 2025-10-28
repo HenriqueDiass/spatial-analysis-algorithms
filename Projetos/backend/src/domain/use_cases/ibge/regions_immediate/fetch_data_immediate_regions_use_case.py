@@ -4,7 +4,7 @@ Use case to fetch geometry data for all Immediate Regions in Brazil.
 """
 from typing import List, Dict, Any, Optional
 import time
-from src.infrastructure.shared import ibge_client
+from backend.src.infrastructure.shared import ibge_client
 
 # Constants to improve readability and maintainability.
 IBGE_REGION_TYPE_IMMEDIATE = "regioes-imediatas"

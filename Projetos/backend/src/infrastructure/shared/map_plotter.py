@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches 
 import geobr 
 
-from src.infrastructure.shared.map_styles import STYLES 
+from backend.src.infrastructure.shared.map_styles import STYLES 
 
 def plot_map(
     gdf: gpd.GeoDataFrame, 

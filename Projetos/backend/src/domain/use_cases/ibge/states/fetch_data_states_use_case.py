@@ -4,7 +4,7 @@ Use case to fetch detailed data (geometry, population) for all Brazilian states.
 """
 from typing import List, Dict, Any, Optional
 import time
-from src.infrastructure.shared import ibge_client
+from backend.src.infrastructure.shared import ibge_client
 
 # Constants for IBGE API parameters to make the code self-documenting.
 IBGE_TERRITORIAL_LEVEL_STATE = "N3"

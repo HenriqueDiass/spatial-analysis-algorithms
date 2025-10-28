@@ -4,7 +4,7 @@ from typing import List, Optional
 # --- NOVA IMPORTAÇÃO ---
 from fastapi.concurrency import run_in_threadpool
 
-from src.domain.use_cases.pysus.sinan.fetch_data_sinan_use_case import FetchDataSinanUseCase
+from backend.src.domain.use_cases.pysus.sinan.fetch_data_sinan_use_case import FetchDataSinanUseCase
 
 # A função do controller agora também é 'async def'
 async def fetch_sinan_data_controller(disease_code: str, years: List[int], states: Optional[List[str]]):

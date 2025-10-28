@@ -2,7 +2,7 @@
 
 from fastapi.responses import JSONResponse
 from fastapi import status
-from src.domain.use_cases.pysus.sim.get_variables_sim_use_case import GetVariablesSimUseCase
+from backend.src.domain.use_cases.pysus.sim.get_variables_sim_use_case import GetVariablesSimUseCase
 
 def get_variables_sim_controller():
     """

@@ -1,6 +1,6 @@
 # src/infrastructure/controllers/ibge/regions_immediate/fetch-data-immediate-regions.controller.py
 from fastapi import HTTPException
-from src.domain.use_cases.ibge.regions_intermediate import FetchDataImmediateRegionsUseCase
+from backend.src.domain.use_cases.ibge.regions_intermediate import FetchDataImmediateRegionsUseCase
 
 def fetch_all_immediate_regions():
     """

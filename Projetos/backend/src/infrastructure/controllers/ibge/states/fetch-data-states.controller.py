@@ -1,6 +1,6 @@
 # src/infrastructure/controllers/ibge/states/fetch-data-states.controller.py
 from fastapi import HTTPException
-from src.domain.use_cases.ibge.states import FetchDataStatesUseCase
+from backend.src.domain.use_cases.ibge.states import FetchDataStatesUseCase
 
 def fetch_all_states_data():
     """
