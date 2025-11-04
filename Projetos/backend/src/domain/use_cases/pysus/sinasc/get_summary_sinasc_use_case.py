@@ -9,8 +9,11 @@ from typing import List, Dict, Any, Optional
 from src.infrastructure.shared import data_utils
 
 class GetSummarySinascUseCase:
-   
+    
     def execute(self, group_code: str, years: List[int], states: Optional[List[str]] = None) -> Dict[str, Any]:
+        
+        # 1. Inicializa a variável do cabeçalho
+        column_names: Optional[List[str]] = None 
         
         try:
             
@@ -18,11 +21,13 @@ class GetSummarySinascUseCase:
             files_to_download = sinasc_db.get_files(group=group_code, year=years, uf=states)
 
             if not files_to_download:
-                return {}
+                # 2. Atualiza o retorno para o novo formato
+                return {"summary": {}, "columns": []} 
             
             downloaded_objects = sinasc_db.download(files_to_download)
             if not downloaded_objects:
-                return {}
+                # 2. Atualiza o retorno para o novo formato
+                return {"summary": {}, "columns": []} 
 
             if isinstance(downloaded_objects, list):
                 list_of_dataframes = [pq.to_dataframe() for pq in downloaded_objects]
@@ -31,7 +36,12 @@ class GetSummarySinascUseCase:
                 unfiltered_dataframe = downloaded_objects.to_dataframe()
 
             if unfiltered_dataframe.empty:
-                return {}
+                return {"summary": {}, "columns": []} 
+
+            
+            column_names = unfiltered_dataframe.columns.tolist()
+            print(f"-> Cabeçalho SINASC capturado: {column_names[:5]}...")
+            
 
             filtered_dataframe = data_utils.filter_dataframe_by_states(
                 unfiltered_dataframe, 
@@ -59,8 +69,13 @@ class GetSummarySinascUseCase:
                     birth_summary[mun_code]["by_sex"][sex] = birth_summary[mun_code]["by_sex"].get(sex, 0) + count
                     birth_summary[mun_code]["by_mother_age_group"][age_group] = birth_summary[mun_code]["by_mother_age_group"].get(age_group, 0) + count
             
-            return birth_summary
+            
+            return {
+                "summary": birth_summary,
+                "columns": column_names if column_names else []
+            }
 
         except Exception as e:
-            print(f"An error occurred during SINASC summary generation: {e}") # Use logging in a real app
-            return {}
+            print(f"An error occurred during SINASC summary generation: {e}") 
+            # 5. Atualiza o retorno de exceção
+            return {"summary": {}, "columns": []}

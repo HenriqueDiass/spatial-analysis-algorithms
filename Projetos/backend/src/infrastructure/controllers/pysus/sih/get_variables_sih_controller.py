@@ -2,7 +2,7 @@
 
 from fastapi.responses import JSONResponse
 from fastapi import status
-from backend.src.domain.use_cases.pysus.sih.get_variables_sih_use_case import GetVariablesSihUseCase
+from src.domain.use_cases.pysus.sih.get_variables_sih_use_case import GetVariablesSihUseCase
 
 def get_variables_sih_controller():
     """

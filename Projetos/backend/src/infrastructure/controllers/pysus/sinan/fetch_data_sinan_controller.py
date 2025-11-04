@@ -1,44 +1,60 @@
 from fastapi.responses import JSONResponse
 from fastapi import status, HTTPException
-from typing import List, Optional
-# --- NOVA IMPORTAÇÃO ---
+from typing import List, Optional, Dict, Any
 from fastapi.concurrency import run_in_threadpool
 
-from backend.src.domain.use_cases.pysus.sinan.fetch_data_sinan_use_case import FetchDataSinanUseCase
+from src.domain.use_cases.pysus.sinan.fetch_data_sinan_use_case import FetchDataSinanUseCase
 
 # A função do controller agora também é 'async def'
 async def fetch_sinan_data_controller(disease_code: str, years: List[int], states: Optional[List[str]]):
-    """
-    Controller que busca um resumo de dados do SINAN de forma não-bloqueante.
-    """
+   
     try:
         params = {
             "disease_code": disease_code,
             "years": years,
-            "states": states # O UseCase já lida com a conversão para maiúsculas etc.
+            "states": states
         }
 
         use_case = FetchDataSinanUseCase()
 
-        # --- A MÁGICA ACONTECE AQUI ---
-        # Em vez de: summary_list = use_case.execute(**params)
-        # Nós pedimos para o FastAPI rodar a função pesada 'use_case.execute'
-        # em uma thread pool, e esperamos ('await') pelo resultado.
-        summary_list = await run_in_threadpool(use_case.execute, **params)
         
-        if summary_list:
-            summary_response = {
-                "metadata": {
-                    "system": "SINAN",
-                    "parameters": params,
-                    "total_records_found": sum(item['total_cases'] for item in summary_list)
-                },
-                "summary_by_municipality": summary_list
-            }
-            return JSONResponse(content=summary_response, status_code=status.HTTP_200_OK)
-        else:
-            raise HTTPException(status_code=404, detail="Nenhum dado encontrado.")
+        result_dict: Optional[Dict[str, Any]] = await run_in_threadpool(use_case.execute, **params)
+        
+       
+        if result_dict and "summary" in result_dict:
+            
+            summary_list = result_dict["summary"]
+            column_names = result_dict.get("columns", []) 
+            
+           
+            if summary_list:
+                
+                
+                total_records = sum(item['total_cases'] for item in summary_list)
 
+                summary_response = {
+                    "metadata": {
+                        "system": "SINAN",
+                        "parameters": params,
+                        "columns": column_names, 
+                        "total_records_found": total_records
+                    },
+                    "summary_by_municipality": summary_list
+                }
+                return JSONResponse(content=summary_response, status_code=status.HTTP_200_OK)
+            
+            
+            else:
+                return JSONResponse(
+                    content={"metadata": {"columns": column_names, "total_records_found": 0}, "summary_by_municipality": []},
+                    status_code=status.HTTP_200_OK # Retorna 200 OK com lista vazia é comum para "nenhum resultado"
+                )
+
+        else:
+            raise HTTPException(status_code=404, detail="Nenhum dado encontrado ou estrutura de retorno inválida.")
+
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Erro interno ao buscar dados do SINAN: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro interno no servidor.")

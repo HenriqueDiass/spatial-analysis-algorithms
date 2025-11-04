@@ -1,20 +1,3 @@
-"""
-Módulo centralizado para as configurações de estilo dos mapas.
-
-Este arquivo é a fonte única de verdade para a aparência de todos os mapas.
-A estrutura foi projetada para ser o mais clara e manutenível possível,
-seguindo uma lógica de três passos:
-
-1.  `COLOR_PALETTE`: Define as cores base do projeto. Mude uma cor aqui
-    e ela se propagará por todos os estilos que a utilizam.
-
-2.  `GENERAL_STYLE`: Define a aparência da "tela" do mapa, como cor de fundo
-    e propriedades padrão dos títulos.
-
-3.  `STYLES`: Um grande dicionário que contém as configurações detalhadas
-    para cada tipo de mapa que seu programa pode gerar.
-"""
-
 # ==============================================================================
 # 1. PALETA DE CORES PRINCIPAL
 # ==============================================================================
@@ -87,7 +70,7 @@ STYLES = {
         'linewidth': 0.5,
         'edgecolor': COLOR_PALETTE['neutral_dark'],
         'missing_kwds': {
-            'color': COLOR_PALETTE['missing_data'],
+            'color': COLOR_PALETTE['black'],
             'label': 'Dados não disponíveis',
         }
     },
@@ -116,14 +99,14 @@ STYLES = {
     'state_regional_map': {
         'municipality_coverage': {
             'facecolor': COLOR_PALETTE['neutral_light'],
-            'edgecolor': COLOR_PALETTE['neutral_medium'],
+            'edgecolor': COLOR_PALETTE['black'],
             'linewidth': 0.3,
         },
         'immediate_region_line': {
             'edgecolor': COLOR_PALETTE['primary_blue'],
             'linewidth': 1.0,
         },
-        'immediate_region_alt_color': '#696969',
+        'immediate_region_alt_color': "#000000",
         'intermediate_region_line': {
             'edgecolor': COLOR_PALETTE['highlight_red'],
             'linewidth': 1.2,
@@ -152,9 +135,7 @@ STYLES = {
         }
     },
 
-    # <<< NOVO ESTILO ADICIONADO AQUI >>>
-    # Estilo para o nosso novo mapa coroplético com fundo de contexto
-    # Usado em: use_cases/create_map/plotter.py
+    
     'advanced_choropleth': {
         'figure': {
             # Cor azul de fundo, vinda do seu estilo de destaque

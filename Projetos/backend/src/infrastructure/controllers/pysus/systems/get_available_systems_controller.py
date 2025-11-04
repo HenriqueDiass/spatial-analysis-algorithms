@@ -5,7 +5,7 @@ from fastapi import status
 
 # --- CORREÇÃO ESTÁ NESSA LINHA ---
 # A importação começa com 'src' e aponta para o arquivo .py específico.
-from backend.src.domain.use_cases.pysus.systems.get_available_systems_use_case import GetAvailablePysusSystemsUseCase
+from src.domain.use_cases.pysus.systems.get_available_systems_use_case import GetAvailablePysusSystemsUseCase
 
 def get_available_pysus_systems_controller():
     """

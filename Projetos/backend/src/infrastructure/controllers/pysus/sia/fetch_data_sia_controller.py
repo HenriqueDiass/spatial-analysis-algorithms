@@ -6,7 +6,7 @@ from typing import List, Optional
 import pandas as pd
 
 # Verifique se o import do UseCase está correto
-from backend.src.domain.use_cases.pysus.sia.fetch_data_sia_use_case import FetchDataSiaUseCase
+from src.domain.use_cases.pysus.sia.fetch_data_sia_use_case import FetchDataSiaUseCase
 
 # Verifique se o nome desta função está escrito exatamente assim
 def fetch_sia_data_controller(group_code: str, years: List[int], states: Optional[List[str]], months: Optional[List[int]]):

@@ -1,6 +1,6 @@
 # src/infrastructure/controllers/ibge/municipalities/fetch-data-municipalities.controller.py
 from fastapi import HTTPException
-from backend.src.domain.use_cases.ibge.municipalities import FetchDataMunicipalitiesUseCase
+from src.domain.use_cases.ibge.municipalities import FetchDataMunicipalitiesUseCase
 
 def fetch_municipalities_by_state(state_abbr: str):
     """

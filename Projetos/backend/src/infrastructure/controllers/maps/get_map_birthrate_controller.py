@@ -3,7 +3,7 @@
 from fastapi import HTTPException
 # Importação explícita do Response necessário para retornar imagens
 from fastapi.responses import Response # <-- Usamos Response, que é mais comum para buffers fixos como PNG
-from backend.src.domain.use_cases.maps.get_map_birthrate_use_case import GetMapBirthrateUseCase
+from src.domain.use_cases.maps.get_map_birthrate_use_case import GetMapBirthrateUseCase
 
 # Adicionamos 'group_code' como um novo parâmetro
 def generate_birth_rate_map(state_abbr: str, year: int, metric: str, group_code: str):

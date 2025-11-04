@@ -7,7 +7,7 @@ from typing import List, Optional
 # --- IMPORTAÇÃO CHAVE ---
 from fastapi.concurrency import run_in_threadpool 
 
-from backend.src.domain.use_cases.pysus.sim.fetch_data_sim_use_case import FetchDataSimUseCase
+from src.domain.use_cases.pysus.sim.fetch_data_sim_use_case import FetchDataSimUseCase
 
 # O controller é async def, como o do SINAN
 async def fetch_sim_data_controller(group_code: str, years: List[int], states: Optional[List[str]]):
@@ -30,9 +30,12 @@ async def fetch_sim_data_controller(group_code: str, years: List[int], states: O
         # AQUI usamos AWAIT run_in_threadpool para executar o Use Case SÍNCRONO em background
         result_dict = await run_in_threadpool(use_case.execute, **params)
         
+        # --- CORREÇÃO 1: Extrair AMBAS as chaves do resultado ---
         summary_list = result_dict.get("summary_by_municipality", [])
+        columns_list = result_dict.get("columns", []) # <-- ESTAVA FALTANDO ISSO
 
         if summary_list:
+            # --- CORREÇÃO 2: Adicionar as colunas na resposta final ---
             summary_response = {
                 "metadata": {
                     "system": "SIM",
@@ -40,11 +43,12 @@ async def fetch_sim_data_controller(group_code: str, years: List[int], states: O
                     # Calcula o total de óbitos
                     "total_records_found": sum(item["total_deaths"] for item in summary_list) 
                 },
+                "columns": columns_list, # <-- ESTAVA FALTANDO ISSO
                 "summary_by_municipality": summary_list
             }
             return JSONResponse(content=summary_response, status_code=status.HTTP_200_OK)
         else:
-            # Retorna 404 quando o Use Case retorna uma lista vazia (sem dados)
+            
             raise HTTPException(status_code=404, detail="Nenhum dado encontrado para os parâmetros fornecidos.")
 
     except HTTPException as http_exc:

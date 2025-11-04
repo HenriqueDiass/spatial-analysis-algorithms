@@ -10,3 +10,8 @@ METRIC_OPTIONS = {
     "Births by Mothers 30-39 y.o.": "births_mother_30to39",
     "Births by Mothers 40+ y.o.": "births_mother_40plus",
 }
+
+METRIC_OPTIONS_SINAN = {
+    "Taxa de Prevalência (por 10.000 hab.)": "prevalence_per_100000",
+    "Total de Casos Confirmados": "casos_total"
+}

@@ -1,9 +1,10 @@
-# src/infrastructure/controllers/maps/routes.py
-
 from fastapi import APIRouter, Query
 from enum import Enum
 
 from .get_map_birthrate_controller import generate_birth_rate_map
+from .get_map_state_controller import generate_state_layers_map
+# 1. IMPORTAR O NOVO CONTROLLER
+from .get_map_prevalence_controller import generate_prevalence_map
 
 class BirthRateMetric(str, Enum):
     total_births = "total_births"
@@ -12,6 +13,12 @@ class BirthRateMetric(str, Enum):
     births_mother_20to29 = "births_mother_20to29"
     births_mother_30to39 = "births_mother_30to39"
     births_mother_40plus = "births_mother_40plus"
+
+# 2. ADICIONAR O NOVO ENUM PARA AS MÉTRICAS DE PREVALÊNCIA
+class PrevalenceMetric(str, Enum):
+    total_cases = "total_cases"
+    # O nome da métrica deve bater com o definido no 'GetMapPrevalenceUseCase'
+    prevalence_per_100000 = "prevalence_per_100000" 
 
 maps_router = APIRouter()
 
@@ -23,25 +30,86 @@ maps_router = APIRouter()
 def get_map_birthrate_route(
     state_abbr: str, 
     year: int,
-    # --- NOVO PARÂMETRO ADICIONADO AQUI ---
     group_code: str = Query(
         default="DN", 
         description="Código do grupo de dados do SINASC (ex: 'DN' para Declaração de Nascido Vivo).",
         example="DN"
     ),
-    # ----------------------------------------
     metric: BirthRateMetric = Query(
         default=BirthRateMetric.birth_rate_per_1000,
         description="A métrica de natalidade a ser exibida no mapa."
     )
 ):
-    """
-    Gera e retorna uma imagem PNG de um mapa de coropletas sobre nascimentos.
-    """
-    # Passamos o novo parâmetro para o controller
+    
     return generate_birth_rate_map(
         state_abbr=state_abbr, 
         year=year, 
         metric=metric.value,
-        group_code=group_code # <-- MUDANÇA
+        group_code=group_code 
+    )
+
+# 3. ADICIONAR A NOVA ROTA DE PREVALÊNCIA
+@maps_router.get(
+    "/{state_abbr}/{year}/prevalence", 
+    tags=["Mapas"],
+    summary="Gera um mapa coroplético de prevalência para um estado, ano e agravo"
+)
+def get_map_prevalence_route(
+    state_abbr: str, 
+    year: int,
+    disease_code: str = Query(
+        ..., # ... torna o parâmetro OBRIGATÓRIO
+        description="Código do agravo do SINAN (ex: 'B58' para Toxoplasmose).",
+        example="B58"
+    ),
+    metric: PrevalenceMetric = Query(
+        default=PrevalenceMetric.prevalence_per_100000,
+        description="A métrica de prevalência a ser exibida no mapa."
+    )
+):
+    
+    return generate_prevalence_map(
+        state_abbr=state_abbr, 
+        year=year, 
+        metric=metric.value,
+        disease_code=disease_code
+    )
+
+@maps_router.get(
+    "/{state_abbr}/{year}/regional-layers", 
+    tags=["Mapas"], 
+    summary="Gera o mapa de divisões regionais de um estado sobre o contexto nacional (Brasil)."
+)
+def get_map_state_layers_route(
+    state_abbr: str, 
+    year: int,
+    show_municipalities: bool = Query(
+        default=False, 
+        description="Incluir a camada de municípios.",
+        example=False
+    ),
+    show_immediate: bool = Query(
+        default=False,
+        description="Incluir a camada de Regiões Geográficas Imediatas.",
+        example=False
+    ),
+    show_intermediate: bool = Query(
+        default=False,
+        description="Incluir a camada de Regiões Geográficas Intermediárias.",
+        example=False
+    ),
+    use_zoom: bool = Query(
+        default=False,
+        description="Incluir zoom nos mapas.",
+        example=False
+    )
+):
+    
+    return generate_state_layers_map(
+        state_abbr=state_abbr, 
+        year=year, 
+        show_municipalities=show_municipalities,
+        show_immediate=show_immediate,
+        show_intermediate=show_intermediate,
+        use_zoom=use_zoom,
     )

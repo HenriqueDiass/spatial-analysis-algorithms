@@ -1,0 +1,28 @@
+from fastapi import HTTPException
+from fastapi.responses import Response 
+from src.domain.use_cases.maps.get_map_prevalence_use_case import GetMapPrevalenceUseCase
+
+def generate_prevalence_map(state_abbr: str, year: int, metric: str, disease_code: str):
+    """
+    Controller que orquestra a geração do mapa coroplético de prevalência.
+    """
+    try:
+        use_case = GetMapPrevalenceUseCase()
+        
+        image_buffer = use_case.execute(
+            state_abbr=state_abbr,
+            year=year,
+            metric_column=metric,
+            disease_code=disease_code
+        )
+
+        if image_buffer is None:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Não foi possível gerar o mapa. Dados não encontrados para a combinação: {state_abbr}/{year}/{disease_code}."
+            )
+        
+        return Response(content=image_buffer.read(), media_type="image/png")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro interno no servidor: {e}")

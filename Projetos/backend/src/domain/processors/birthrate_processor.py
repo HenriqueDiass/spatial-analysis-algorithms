@@ -3,8 +3,7 @@
 import pandas as pd
 import geopandas as gpd
 from typing import List, Dict, Optional, Any
-from backend.src.infrastructure.shared.geography_utils import fetch_municipalities_gdf 
-# Note: Certifique-se de que a linha de importação acima está correta para sua estrutura de pastas.
+from src.infrastructure.shared.geography_utils import fetch_municipalities_gdf 
 
 
 class BirthrateDataProcessor:

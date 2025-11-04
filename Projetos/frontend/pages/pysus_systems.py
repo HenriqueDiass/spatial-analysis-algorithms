@@ -24,12 +24,37 @@ if systems_list:
                 
                 if system['code'] == 'SINAN':
                     st.page_link(
-                        "pages/SINAN_Variables.py", 
+                        "pages/sinan_disease_variables.py", 
                         label=f"Explore {system['code']} Variables", 
                         icon="➡️"
+                        
                     )
+                elif system['code'] == 'CNES':
+                
+                    st.page_link(
+                        "pages/cnes_medical_beds.py",  
+                        label="Search Establishments", 
+                        icon="🏥"
+                    )
+                    
+                    
+                    st.page_link(
+                        "pages/cnes_professionals.py",  
+                        label="Search Professionals", 
+                        icon="🧑‍⚕️"
+                    )
+                    
+                    
+                    st.page_link(
+                        "pages/cnes_equipment.py",      
+                        label="Search Equipment", 
+                        icon="🔬"
+                    )
+
                 else:
                     st.info("Query page not yet implemented for this system.")
+
+
 
 else:
     st.warning("Could not load the list of PySUS systems.")

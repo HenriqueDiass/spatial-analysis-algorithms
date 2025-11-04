@@ -6,12 +6,12 @@ import pandas as pd
 import geobr
 
 # Importa o novo processador
-from backend.src.domain.processors.birthrate_processor import BirthrateDataProcessor 
+from src.domain.processors.birthrate_processor import BirthrateDataProcessor 
 
 # Importa os outros UseCases
-from backend.src.domain.use_cases.ibge.population.fetch_data_population_use_case import FetchDataPopulationUseCase
-from backend.src.domain.use_cases.pysus.sinasc.get_summary_sinasc_use_case import GetSummarySinascUseCase
-from backend.src.infrastructure.shared import map_plotter
+from src.domain.use_cases.ibge.population.fetch_data_population_use_case import FetchDataPopulationUseCase
+from src.domain.use_cases.pysus.sinasc.get_summary_sinasc_use_case import GetSummarySinascUseCase
+from src.infrastructure.shared import map_plotter
 
 
 class GetMapBirthrateUseCase:

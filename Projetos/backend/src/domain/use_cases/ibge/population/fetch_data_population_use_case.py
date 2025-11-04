@@ -17,9 +17,7 @@ STATE_ABBR_TO_IBGE_CODE: Dict[str, str] = {
 
 class FetchDataPopulationUseCase:
     def execute(self, year: int, state_abbr: str) -> Optional[List[Dict[str, Any]]]:
-        """
-        Busca dados populacionais do IBGE (SIDRA) para todos os municípios de um estado.
-        """
+        
         state_code = STATE_ABBR_TO_IBGE_CODE.get(state_abbr.upper())
         if not state_code:
             print(f"Erro: sigla de estado '{state_abbr}' inválida.")
@@ -35,7 +33,7 @@ class FetchDataPopulationUseCase:
 
             raw_data_table = sidrapy.get_table(
                 table_code=table_to_query,
-                territorial_level="6",  # Nível 6: Municípios
+                territorial_level="6",  
                 ibge_territorial_code=territorial_scope,
                 variable=variable_to_query,
                 period=str(year),

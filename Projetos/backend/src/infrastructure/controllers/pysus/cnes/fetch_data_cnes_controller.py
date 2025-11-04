@@ -2,7 +2,7 @@ from fastapi.responses import JSONResponse
 from fastapi import status, HTTPException
 from typing import List, Optional
 
-from backend.src.domain.use_cases.pysus.cnes.fetch_data_cnes_use_case import FetchDataCnesUseCase
+from src.domain.use_cases.pysus.cnes.fetch_data_cnes_use_case import FetchDataCnesUseCase
 
 def fetch_cnes_data_controller(group_code: str, years: List[int], states: Optional[List[str]]):
     """
