@@ -16,7 +16,7 @@ class GetMapPrevalenceUseCase:
         metric_column: str
     ) -> Optional[io.BytesIO]:
         
-        # --- PASSO 1: COLETAR DADOS (ORQUESTRAÇÃO) ---
+        
         print("--- PASSO 1: COLETANDO DADOS ---")
         
         population_use_case = FetchDataPopulationUseCase()
@@ -38,9 +38,9 @@ class GetMapPrevalenceUseCase:
             print("❌ Falha: Dados de casos (SINAN) não encontrados.")
             return None
 
-        # --- PASSO 2: PROCESSAR E COMBINAR (DELEGADO AO PROCESSOR) ---
-        print("\n--- PASSO 2: PROCESSANDO DADOS ---")
         
+        print("\n--- PASSO 2: PROCESSANDO DADOS ---")
+
         processor = PrevalenceDataProcessor(year=year) 
         
         merged_gdf = processor.execute(
@@ -53,10 +53,10 @@ class GetMapPrevalenceUseCase:
             print("❌ Falha: Não foi possível processar e unir os dados.")
             return None
         
-        # --- PASSO 3: GERAR A IMAGEM DO MAPA ---
+        
         print("\n--- PASSO 3: GERANDO MAPA ---")
         
-        # O nome da coluna de taxa é 'prevalence_per_100000' (ou o multiplier usado)
+        
         
         metric_details = {
             "total_cases": {
@@ -67,7 +67,7 @@ class GetMapPrevalenceUseCase:
                 "title": f"Prevalência ({disease_code}) - {state_abbr.upper()} ({year})", 
                 "label": "Casos por 100.000 Hab."
             }
-            # Adicione 'prevalence_per_1000' etc. se você mudar o multiplier
+            
         }
         
         details = metric_details.get(metric_column)

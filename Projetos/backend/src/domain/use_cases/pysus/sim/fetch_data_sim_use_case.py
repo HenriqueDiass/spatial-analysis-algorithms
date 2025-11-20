@@ -80,7 +80,7 @@ class FetchDataSimUseCase:
 
                     # 4. Lógica de captura do cabeçalho (apenas uma vez)
                     if column_names is None:
-                        column_names = parquet_file.schema.names
+                        column_names = parquet_file.schema.names #ccabe
                         print(f"-> Cabeçalho capturado: {column_names[:5]}...")
 
                     for i in range(parquet_file.num_row_groups):

@@ -7,7 +7,6 @@ from src.ui.constants import API_URL
 
 @st.cache_data
 def fetch_table_list() -> Optional[List[Dict[str, Any]]]:
-    """Fetches the list of all available tables from the API."""
     try:
         response = requests.get(f"{API_URL}/sidra/tables")
         response.raise_for_status()
@@ -20,10 +19,9 @@ def fetch_table_list() -> Optional[List[Dict[str, Any]]]:
                 for table in research["agregados"]:
                     final_table_list.append({
                         "id": table["id"],
-                        "name": table["nome"] # Keeping original Portuguese name for user selection
+                        "name": table["nome"] 
                     })
 
-        # Sort by table ID (as integer)
         return sorted(final_table_list, key=lambda x: int(x['id']))
     except requests.exceptions.RequestException as e:
         st.error(f"Error connecting to the API to fetch tables: {e}")
@@ -31,7 +29,6 @@ def fetch_table_list() -> Optional[List[Dict[str, Any]]]:
 
 @st.cache_data
 def fetch_table_metadata(table_id: int) -> Optional[Dict[str, Any]]:
-    """Fetches the metadata (variables, levels, periods) for a specific table ID."""
     try:
         response = requests.get(f"{API_URL}/sidra/tables/{table_id}")
         response.raise_for_status()
@@ -41,7 +38,6 @@ def fetch_table_metadata(table_id: int) -> Optional[Dict[str, Any]]:
     
 @st.cache_data
 def fetch_sidra_data(params: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
-    """ Fetches specific consultation data from the API based on user parameters. """
     try:
         response = requests.get(f"{API_URL}/sidra/tables/fetch-specific", params=params)
         response.raise_for_status()
@@ -57,12 +53,11 @@ def fetch_sidra_data(params: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
     
 @st.cache_data
 def fetch_birthrate_map(state_abbr: str, year: int, metric_column: str) -> Optional[bytes]:
-    """ Requests the birth rate map image from the backend API. """
     base_url = f"{API_URL}/maps/{state_abbr}/{year}/birth-rate"
 
     params = {
         "metric": metric_column,
-        "group_code": "DN" # Declaração de Nascidos
+        "group_code": "DN" 
     }
 
     st.info(f"Calling API: {base_url} with metric: {metric_column}")
@@ -71,7 +66,6 @@ def fetch_birthrate_map(state_abbr: str, year: int, metric_column: str) -> Optio
         response = requests.get(base_url, params=params, timeout=60)
         response.raise_for_status()
         return response.content
-        # response.content contains the raw bytes (PNG image) from the backend
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Error generating map in the API.")
         if e.response is not None:
@@ -265,6 +259,63 @@ def fetch_sim_data(
         response.raise_for_status()  # Lança exceção para status 4xx/5xx
         
         # Retorna os dados em formato JSON (dicionário)
+        return response.json()
+    
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Erro ao buscar dados do SIM na API.")
+        
+        if e.response is not None:
+            try:
+                error_detail = e.response.json().get("detail", e.response.text)
+                st.write(f"Server error details: {error_detail}")
+            except:
+                st.write(f"Network error details: {e}")
+        return None
+    
+@st.cache_data
+def fetch_sinasc_variables() -> Optional[Dict[str, Any]]:
+    
+    base_url = f"{API_URL}/pysus/sinasc/variables"
+
+    st.info(f"Calling API: {base_url}")
+
+    try:
+        response = requests.get(base_url, timeout=30)
+        response.raise_for_status()  
+        
+        return response.json() 
+    
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Erro ao buscar variáveis do SINASC.")
+        
+        if e.response is not None:
+            try:
+                error_detail = e.response.json().get("detail", e.response.text)
+                st.write(f"Server error details: {error_detail}")
+            except:
+                st.write(f"Network error details: {e}")
+        return None
+    
+@st.cache_data
+def fetch_sinasc_data(
+    group_code: str, 
+    years: List[int], 
+    states: Optional[List[str]] = None
+) -> Optional[Dict[str, Any]]:
+    
+    base_url = f"{API_URL}/pysus/sinasc/get-summary"
+    params: Dict[str, Any] = {
+        "group_code": group_code,
+        "years": years
+    }
+    if states:
+        params["states"] = states
+
+    st.info(f"Calling API: {base_url} with params: {params}")
+
+    try:
+        response = requests.get(base_url, params=params, timeout=180)
+        response.raise_for_status()  
         return response.json()
     
     except requests.exceptions.RequestException as e:

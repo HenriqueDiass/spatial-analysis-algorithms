@@ -1,7 +1,6 @@
 import pandas as pd
 import geopandas as gpd
 from typing import List, Dict, Optional, Any
-# Certifique-se de que esta importação existe no seu projeto:
 from src.infrastructure.shared.geography_utils import fetch_municipalities_gdf 
 
 class PrevalenceDataProcessor:
@@ -10,10 +9,7 @@ class PrevalenceDataProcessor:
         self._year = year 
         
     def _process_sinan_summary(self, sinan_summary: List[Dict[str, Any]]) -> pd.DataFrame:
-        """ 
-        Converte o sumário do SINAN (lista de dicts) em um DataFrame 
-        pronto para o merge, garantindo o tipo correto da chave.
-        """
+        
         
         if not sinan_summary:
             return pd.DataFrame(columns=['code_muni_6digit', 'total_cases'])
@@ -51,6 +47,7 @@ class PrevalenceDataProcessor:
         cases_df = self._process_sinan_summary(sinan_summary)
         
         print(" -> [Processador] Processando dados de população...")
+        
         population_df = pd.DataFrame(population_data)
         if 'code_muni_6digit' in population_df.columns:
              population_df['code_muni_6digit'] = population_df['code_muni_6digit'].astype(int)

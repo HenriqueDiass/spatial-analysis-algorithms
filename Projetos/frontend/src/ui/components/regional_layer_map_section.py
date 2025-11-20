@@ -42,7 +42,6 @@ def display_regional_layers_section():
         
         map_submitted = st.form_submit_button("Gerar Mapa Regional")
 
-    
     if map_submitted:
         if not state_abbr or len(state_abbr) != 2:
             st.warning("Por favor, insira uma sigla de UF válida com 2 caracteres.")

@@ -44,8 +44,6 @@ def plot_map(
             zorder=1
         )
         
-        #cax = ax.inset_axes([0.02, 0.05, 0.2, 0.01]) 
-
         print(f" -> [Visualização] Desenhando mapa coroplético de {state_abbr} (zorder=2)...")
         gdf[column_to_plot] = gdf[column_to_plot].fillna(0)
         vmax = gdf[column_to_plot].quantile(0.95)
@@ -58,47 +56,37 @@ def plot_map(
             linewidth=style['choropleth_layer']['linewidth'],
             edgecolor=style['choropleth_layer']['edgecolor'],
             legend=True, 
-            #vmin=0, 
-            #vmax=vmax,
             zorder=2,
-            scheme='NaturalBreaks', #NaturalBreaks--- Quantiles
+            scheme='NaturalBreaks', 
             k=5,
-           legend_kwds={
+            legend_kwds={
                'loc': 'lower center',          
                 'bbox_to_anchor': (0.5, 0.0), 
                 'ncol': 5,                    
                 'frameon': False,             
-                #'title': legend_label,
                 'labelcolor': STYLES.get('legend', {}).get('labelcolor', STYLES['advanced_choropleth']['title']['color']),
-                
-                
             }
-            #legend_kwds={'cax': cax, 'label': "", 'orientation': "horizontal"}
         )
-        print(" -> [Visualização] Ajustando marcadores da legenda para quadrados...")
+
+        print(" -> [Visualização] Ajustando estilo da legenda...")
         try:
             leg = ax.get_legend()
             if leg:
                 
                 for handle in leg.legend_handles: 
-                    handle.set_marker('s')  # 's' = square (quadrado)
-                    handle.set_markersize(17) # Ajuste o tamanho se necessário
-                    handle.set_markeredgecolor('black') # Cor da borda
+                    handle.set_marker('s')  
+                    handle.set_markersize(17) 
+                    handle.set_markeredgecolor('black') 
                     handle.set_markeredgewidth(0.5)
+                
+                
+                for text in leg.get_texts():
+                    original_label = text.get_text()
+                    new_label = original_label.replace(", ", " - ")
+                    text.set_text(new_label)
+
         except Exception as e:
-            print(f" -> [Visualização] Aviso: Não foi possível modificar os marcadores da legenda: {e}")
-       # label_color = STYLES.get('legend', {}).get('labelcolor', STYLES['advanced_choropleth']['title']['color'])
-        
-        
-       # for spine in cax.spines.values():
-         #   spine.set_visible(True)
-         #   spine.set_edgecolor('black') 
-         #   spine.set_linewidth(1)     
-        
-        
-       # cax.tick_params(axis='x', bottom=False, labelbottom=True)
-       # cax.xaxis.label.set_color(label_color)
-       # cax.tick_params(axis='x', colors=label_color)
+            print(f" -> [Visualização] Aviso: Não foi possível modificar a legenda: {e}")
 
         # --- LÓGICA: AJUSTE DE ZOOM DINÂMICO (COM CORTE PARA PE) ---
         print(" -> [Visualização] Ajustando zoom e finalizando o mapa...")
@@ -136,8 +124,6 @@ def plot_map(
         return buf
 
     except Exception as e:
-        # CORREÇÃO: 'fig' pode não ser definido se o erro for antes.
-        # Adicionamos uma verificação.
         print(f"❌ ERRO ao gerar a imagem do mapa: {e}")
         if 'fig' in locals() and fig is not None: 
             plt.close(fig)

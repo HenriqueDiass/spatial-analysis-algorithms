@@ -11,25 +11,15 @@ class GetVariablesSinascUseCase:
     (Sistema de Informações sobre Nascidos Vivos) database.
     """
     def execute(self) -> Optional[List[Dict[str, str]]]:
-        """
-        Connects to the SINASC datasource via PySUS and fetches the metadata
-        about its data groups.
-
-        Returns:
-            Optional[List[Dict[str, str]]]: A list of dictionaries, where each
-            dictionary represents a data group with its 'code' and 'name'.
-            Returns None if fetching fails.
-        """
+       
         try:
-            # Step 1: Initialize and load the SINASC database metadata.
+            
             sinasc_db = SINASC().load()
 
             if not sinasc_db.groups:
-                print("Could not load SINASC groups from PySUS.") # Log de erro
+                print("Could not load SINASC groups from PySUS.") 
                 return None
 
-            # Step 2: Transform the dictionary of groups into a structured list.
-            # e.g., {'DN': 'Declaração de Nascido Vivo', ...} -> [{'code': 'DN', 'name': 'Declaração de Nascido Vivo'}, ...]
             groups_list = [
                 {"code": code, "name": description}
                 for code, description in sinasc_db.groups.items()

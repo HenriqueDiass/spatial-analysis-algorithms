@@ -21,7 +21,6 @@ class GetMapStateLayersUseCase:
 
     ) -> Optional[io.BytesIO]:
 
-        # --- PASSO 1: CARREGAR DADOS GEOGRÁFICOS ---
         print(f"--- PASSO 1: CARREGANDO DADOS PARA {state_abbr.upper()} ({year}) ---")
         fig = None 
 
@@ -69,7 +68,7 @@ class GetMapStateLayersUseCase:
             intermediate_gdf = intermediate_br.query("code_state == @code_state")
 
 
-        # --- PASSO 2: GERAR A IMAGEM DO MAPA ---
+        
         print("\n--- PASSO 2: GERANDO MAPA ---")
         
         style = STYLES["state_regional_map"]
@@ -116,7 +115,7 @@ class GetMapStateLayersUseCase:
                 legend=False 
                 
             )
-            title_suffix = " — Destaque Simples"
+            
         else:
             print(" -> [Visualização] MODO: Camadas Regionais.")
             
@@ -128,11 +127,11 @@ class GetMapStateLayersUseCase:
                 intermediate_gdf.plot(ax=ax, facecolor="none", **style["intermediate_region_line"], zorder=4, legend=False)
 
             estado_gdf.plot(ax=ax, facecolor="none", **style["final_border"], zorder=5, legend=False)
-            title_suffix = f" — Divisões Regionais"
+            
 
        
         if use_zoom:
-            # MODO ZOOM: Foca no estado
+            
             print(" -> [Visualização] MODO ZOOM: Aplicando zoom dinâmico no estado...")
             
             state_boundary = brasil_gdf[brasil_gdf['abbrev_state'] == state_abbr.upper()]

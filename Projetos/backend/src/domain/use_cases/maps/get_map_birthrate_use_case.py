@@ -5,7 +5,7 @@ from typing import Optional
 import pandas as pd
 import geobr
 
-# Importa o novo processador
+# Importa o processador
 from src.domain.processors.birthrate_processor import BirthrateDataProcessor 
 
 # Importa os outros UseCases
@@ -15,10 +15,10 @@ from src.infrastructure.shared import map_plotter
 
 
 class GetMapBirthrateUseCase:
- 
+
     def execute(self, state_abbr: str, year: int, group_code: str, metric_column: str) -> Optional[io.BytesIO]:
         
-        # --- PASSO 1: COLETAR DADOS (ORQUESTRAÇÃO) ---
+        
         
         print("--- PASSO 1: COLETANDO DADOS ---")
         
@@ -29,29 +29,31 @@ class GetMapBirthrateUseCase:
             return None
 
         sinasc_use_case = GetSummarySinascUseCase()
-        birth_summary = sinasc_use_case.execute(
+        
+        sinasc_full_response = sinasc_use_case.execute(
             group_code=group_code,
             years=[year], 
             states=[state_abbr]
         )
+        
+        birth_summary = sinasc_full_response.get("summary", {})
+
         if not birth_summary:
-            print("❌ Falha: Dados de nascimentos não encontrados.")
+            print("❌ Falha: Dados de nascimentos não encontrados ou vazios.")
             return None
 
-        # --- PASSO 2: PROCESSAR E COMBINAR (DELEGADO AO PROCESSOR) ---
         print("\n--- PASSO 2: PROCESSANDO DADOS ---")
         
-        processor = BirthrateDataProcessor(year=2020) # Define o ano da geometria
+        processor = BirthrateDataProcessor(year=2020) 
+        
         merged_gdf = processor.execute(
             state_abbr=state_abbr,
             population_data=population_data,
-            birth_summary=birth_summary
+            birth_summary=birth_summary 
         )
         
         if merged_gdf is None: return None
         
-
-        # --- PASSO 3: GERAR A IMAGEM DO MAPA ---
         print("\n--- PASSO 3: GERANDO MAPA ---")
         
         metric_details = {

@@ -3,9 +3,7 @@ from fastapi.responses import Response
 from src.domain.use_cases.maps.get_map_prevalence_use_case import GetMapPrevalenceUseCase
 
 def generate_prevalence_map(state_abbr: str, year: int, metric: str, disease_code: str):
-    """
-    Controller que orquestra a geração do mapa coroplético de prevalência.
-    """
+    
     try:
         use_case = GetMapPrevalenceUseCase()
         
